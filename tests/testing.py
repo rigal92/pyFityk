@@ -1,10 +1,10 @@
-import pyfityk
+import pyfityk.io as ftk
 
 def main(filename):
-	pyfityk.read_map(filename)
+	ftk.read_map(filename)
 
 
 
 if __name__ == '__main__':
-	filename = "../data/map2x2.txt"
+	filename = "data/Raman/map2x2.txt"
 	main(filename)
