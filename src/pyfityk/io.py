@@ -1,6 +1,43 @@
 from fityk import Fityk 
 import pandas as pd
+import numpy as np
 from os.path import isfile
+from .support import points_to_arrays, get_func_y
+
+def export_data(session, outfolder):
+    """
+    Export data
+    -----------------------------------------------------------------
+    Inputs
+    ------
+    session
+        fityk object
+    outfolder: string
+        output folder
+    """
+    f = session
+    for i in range(f.get_dataset_count()):
+        funcs=f.get_components(i)   
+        s_func = [f"F[{n}](x), " for n in range(len(funcs))]
+        title = f.get_info("title",i)
+        s =f"@{i}: print all:x ,y, {s_func} F(x) >'{outfolder}{title}.dat'"   
+        f:execute(s)
+
+def export_peaks(session, outfolder):
+    """
+    Export peaks    -----------------------------------------------------------------
+    Inputs
+    ------
+    session
+        fityk object
+    outfolder: string
+        output folder
+    """
+    f = session
+    for i in range(f.get_dataset_count()):
+        title = f.get_info("title",i)
+        s = f"@{i}: info peaks_er >'{outfolder}{title}.peaks'"   
+        f:execute(s)
 
 def save_session(session, filename):
     """Save session after checking if filename exists"""
