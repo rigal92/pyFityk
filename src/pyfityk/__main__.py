@@ -6,6 +6,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser("")
     parser.add_argument("file")
     parser.add_argument("-o", dest="output", help="output folder")
+    # parser.add_argument("--read", dest="output", help="output folder")
     args = parser.parse_args()
     file = args.file
     

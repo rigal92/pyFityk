@@ -35,3 +35,8 @@ def get_func_y(x, func):
 
     """
     return [func.value_at(i) for i in x]
+
+    
+def to_eV(n):
+    """Converts to eV for 532.1nm a dataset n"""
+    return f"@{n}: X=1.239842e3/532.1 - 1.23984198e-04*x"
