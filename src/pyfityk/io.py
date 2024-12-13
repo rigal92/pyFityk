@@ -2,7 +2,8 @@ from fityk import Fityk
 import pandas as pd
 import numpy as np
 from os.path import isfile
-from .support import points_to_arrays, get_func_y
+from .support import points_to_arrays, get_func_y, checkfolder
+
 
 def export_data(session, outfolder):
     """
@@ -15,13 +16,14 @@ def export_data(session, outfolder):
     outfolder: string
         output folder
     """
+    outfolder = checkfolder(outfolder)
     f = session
     for i in range(f.get_dataset_count()):
-        funcs=f.get_components(i)   
-        s_func = [f"F[{n}](x), " for n in range(len(funcs))]
+        funcs=f.get_components(i)
+        s_func = "".join([f"F[{n}](x), " for n in range(len(funcs))])
         title = f.get_info("title",i)
-        s =f"@{i}: print all:x ,y, {s_func} F(x) >'{outfolder}{title}.dat'"   
-        f:execute(s)
+        s = f"@{i}: print all:x ,y, {s_func} F(x) >'{outfolder}{title}.dat'"
+        f.execute(s)
 
 def export_peaks(session, outfolder):
     """
@@ -33,11 +35,12 @@ def export_peaks(session, outfolder):
     outfolder: string
         output folder
     """
+    outfolder = checkfolder(outfolder)
     f = session
     for i in range(f.get_dataset_count()):
         title = f.get_info("title",i)
-        s = f"@{i}: info peaks_er >'{outfolder}{title}.peaks'"   
-        f:execute(s)
+        s = f"@{i}: info peaks_err >'{outfolder}{title}.peaks'"   
+        f.execute(s)
 
 def save_session(session, filename):
     """Save session after checking if filename exists"""

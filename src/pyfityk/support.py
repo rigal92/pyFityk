@@ -1,4 +1,15 @@
 import numpy as np
+import os 
+
+def checkfolder(folder):
+    """check if folder exists and returns absolut path"""
+    path = os.path.abspath(folder)
+    if not os.path.isdir(path):
+        raise FileNotFoundError('No folder exists at the location specified')
+    if not path.endswith("/"):
+        path+="/"
+    return path
+
 
 def points_to_arrays(data):
     """
