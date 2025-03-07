@@ -70,7 +70,7 @@ def save_session(session, filename):
             break
     session.execute("info state >'%s'" % filename)
 
-def read_map(file, style = "jasko"):
+def read_map(file, style = "jasko", split=True):
     """
     Read a mapping file uploading spectra in fityk.
     -----------------------------------------------------------------
@@ -80,6 +80,9 @@ def read_map(file, style = "jasko"):
         identify the formatting style of the mapping file
         Accepted values:
             - "jasko"
+    split: bool, default=True
+        split files in 250 spectra files in order to reduce fitting 
+        time
 
 
 
@@ -88,17 +91,26 @@ def read_map(file, style = "jasko"):
     if style == "jasko":
         with open(file) as f:
             _ = [next(f) for i in range(13)]
-            xmap = map(float,next(f).split("\t")[1:]) 
-            ymap = map(float,next(f).split("\t")[1:]) 
-
+            xmap = list(map(float,next(f).split("\t")[1:]) )
+            ymap = list(map(float,next(f).split("\t")[1:]) )
+            points = len(xmap)
         for i,(x,y) in enumerate(zip(xmap,ymap)):
             s = f"@+ < '{file}:1:{i+2}::'"
             fk.execute(s)
             # rename dataset using positions
             s = f"@{(fk.get_dataset_count()-1)}: title = '{x}:{y}'"
             fk.execute(s)
+            if split and (((((i+1)%250) == 0) and i!=0) or i==(points-1)):
+                if "." in file:
+                    pos = file.rfind(".")
+                    fname = file[:pos] + f"_{i+1}" + file[pos:]
+                else:
+                    fname = file + f"_{i}"
+                save_session(fk,fname)
+                fk.execute("reset")
     else:
         raise ValueError(f"Style {style} not recognized.")
         
-    save_session(fk,file)
+    if not split:
+        save_session(fk,file)
 
