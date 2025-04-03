@@ -70,7 +70,7 @@ def save_session(session, filename):
             break
     session.execute("info state >'%s'" % filename)
 
-def read_map(file, style = "jasko", split=True):
+def read_map(file, style = "jasko", split=250):
     """
     Read a mapping file uploading spectra in fityk.
     -----------------------------------------------------------------
@@ -80,8 +80,8 @@ def read_map(file, style = "jasko", split=True):
         identify the formatting style of the mapping file
         Accepted values:
             - "jasko"
-    split: bool, default=True
-        split files in 250 spectra files in order to reduce fitting 
+    split: int, default=250
+        split files in *split* spectra files in order to reduce fitting 
         time
 
 
@@ -100,7 +100,7 @@ def read_map(file, style = "jasko", split=True):
             # rename dataset using positions
             s = f"@{(fk.get_dataset_count()-1)}: title = '{x}:{y}'"
             fk.execute(s)
-            if split and (((((i+1)%250) == 0) and i!=0) or i==(points-1)):
+            if split and (((((i+1)%split) == 0) and i!=0) or i==(points-1)):
                 if "." in file:
                     pos = file.rfind(".")
                     fname = file[:pos] + f"_{i+1}" + file[pos:]
