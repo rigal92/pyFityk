@@ -2,8 +2,58 @@ from fityk import Fityk, ExecuteError
 import pandas as pd
 import numpy as np
 from os.path import isfile
-from .support import points_to_arrays, get_func_y, checkfolder
+from io import StringIO
+from .support import points_to_arrays, get_func_y, checkfolder, convert_peaks
 
+def get_data(session, dataset):
+    """
+    Export data
+    -----------------------------------------------------------------
+    Inputs
+    ------
+    session
+        fityk object
+    dataset: int
+        dataset number
+    Return
+    ------
+    pd.DataFrame:
+        pandas Dataframe with x,y,f0..fn,ftot columns
+    """
+    xy = pd.DataFrame(points_to_arrays(session.get_data(dataset)), columns=list("xy"))
+    x = xy["x"]
+    funcs = np.array([get_func_y(x,f) for f in session.get_components(dataset)])
+    if len(funcs)>0:
+        df = pd.concat([xy, pd.DataFrame(funcs.T, columns=[f"f{i}" for i in range(funcs.shape[0])])], axis=1)
+        df["ftot"] = funcs.sum(axis=0)
+        return df
+    else:
+        return xy
+def get_functions(session, dataset):
+    """
+    Extract dataset peaks
+    -----------------------------------------------------------------
+    Inputs
+    ------
+    session
+        fityk object
+    dataset: int
+        dataset number
+    Return
+    ------
+    pd.DataFrame
+        functions table. Functions errors are included if possible.
+        An empty table is returned if there are no functions for 
+        the dataset. 
+    """
+    if len(session.get_components(dataset))==0:
+        return pd.DataFrame()
+    try:
+        funcs = pd.read_table(StringIO(session.get_info("peaks_err",dataset)))
+    except ExecuteError as e:
+        funcs = pd.read_table(StringIO(session.get_info("peaks",dataset)))
+    funcs = convert_peaks(funcs)
+    return funcs
 
 def export_data(session, outfolder):
     """
@@ -54,6 +104,23 @@ def export_peaks(session, outfolder, errors = False):
                 print(f"WARNING! No parametrized functions are used in the model for dataset @{i}. Exporting peaks without errors.")
                 s = f"@{i}: info peaks >'{outfolder}{title}.peaks'"
                 f.execute(s)
+
+    def read_peaks(filename):
+        """
+        Reads a .peak fityk file and formats
+
+        Input
+        -----------------------------------------------
+        filename:str
+            file containg the fit results
+        Returns
+        -----------------------------------------------
+        pandas.DataFrame:
+            DataFrame containing the functions 
+            identifier, name and parameters  
+        """
+        #x is used for the quantities that do not have clearly defined one of the standard parameters (Center,Height...). They will be replaced by NaN
+        return convert_peaks(pd.read_table(filename,na_values = "x"))
 
 
 def save_session(session, filename):
