@@ -29,7 +29,7 @@ def get_data(session, dataset):
         return df
     else:
         return xy
-def get_functions(session, dataset):
+def get_functions_DEP(session, dataset):
     """
     Extract dataset peaks
     -----------------------------------------------------------------
@@ -56,8 +56,22 @@ def get_functions(session, dataset):
     funcs = convert_peaks(funcs)
     return funcs
 
-def read_function_info(func):
+def read_function_pars(func):
+    """
+    Read the function parameters
 
+    Input
+    ------
+    func: Fityk function
+    Return
+    ------
+    list,
+        list of parameters in the format:
+        func ID, func name, Center, Height, Area, FWHM, a0...an
+        If the function does not have either one of the Center, Height, Area, 
+        FWHM parameters that is replaced by a NaN value
+
+    """
     l=[]
     l.append("%" + func.name)
     l.append(func.get_template_name())
@@ -74,7 +88,7 @@ def read_function_info(func):
         i+=1
     return l
 
-def read_functions(session, dataset):
+def get_functions(session, dataset):
     """
     Read all the fuctions of a dataset in the session
     
@@ -91,10 +105,9 @@ def read_functions(session, dataset):
         the parameters as the value
     """
     std_pars = ["Center", "Height", "Area", "FWHM"]
-    df = pd.DataFrame(read_function_info(func) for func in session.get_components(dataset))
+    df = pd.DataFrame(read_function_pars(func) for func in session.get_components(dataset))
     df.columns = ["fid", "fname"] + std_pars + [f"a{n}" for n in range(len(df.columns)-6)] 
     return df
-    # return [read_function_info(func) for func in session.get_components(dataset)]
 
 
 
