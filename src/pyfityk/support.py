@@ -23,10 +23,10 @@ def points_to_arrays(data):
     Return
     ------
     np.array
-        array of pairs [x,y]
+        array [x,y,active]
 
     """
-    return np.array([[i.x,i.y] for i in data])
+    return np.array([[i.x,i.y, i.is_active] for i in data])
 
 def get_func_y(x, func):
     """

@@ -2,17 +2,21 @@ import pyfityk.io as ftk
 from pyfityk.support import points_to_arrays, get_func_y
 from fityk import Fityk
 import time
-f = Fityk()
 
+f = Fityk()
 def main(filename):
 
     f.execute(f"reset; exec {filename}")
 
     import timeit
-    func = f.get_components(0)[0]
-
-    funcs = ftk.get_functions(f,1)
-    print(funcs)
+    # t1 = timeit.timeit(lambda :ftk.get_functions(f,1), number =100)
+    # print("get_functions\n", ftk.get_functions(f,1))
+    # print("Time:", t1)
+    t1 = timeit.timeit(lambda :ftk.read_functions(f,1), number =100)
+    print("get_functions\n", ftk.read_functions(f,1))
+    print("Time:", t1)
+    # t1 = timeit.timeit(lambda :ftk.get_data(f,1), number =1)
+    # print(t1)
 
     # print(funcs)
     # print(funcs.iloc[1,-1])
@@ -29,5 +33,5 @@ def main(filename):
 if __name__ == '__main__':
 
     filename = "data/Map_PL_500spectra.fit"
-    filename = "data/Raman/map2x2.fit"
+    # filename = "data/Raman/map2x2.fit"
     main(filename)

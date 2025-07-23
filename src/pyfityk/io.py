@@ -20,7 +20,7 @@ def get_data(session, dataset):
     pd.DataFrame:
         pandas Dataframe with x,y,f0..fn,ftot columns
     """
-    xy = pd.DataFrame(points_to_arrays(session.get_data(dataset)), columns=list("xy"))
+    xy = pd.DataFrame(points_to_arrays(session.get_data(dataset)), columns=["x","y","active"])
     x = xy["x"]
     funcs = np.array([get_func_y(x,f) for f in session.get_components(dataset)])
     if len(funcs)>0:
@@ -48,12 +48,55 @@ def get_functions(session, dataset):
     """
     if len(session.get_components(dataset))==0:
         return pd.DataFrame()
-    try:
-        funcs = pd.read_table(StringIO(session.get_info("peaks_err",dataset)))
-    except ExecuteError as e:
+    # try:
+        # funcs = pd.read_table(StringIO(session.get_info("peaks_err",dataset)))
+    # except ExecuteError as e:
+    if True:
         funcs = pd.read_table(StringIO(session.get_info("peaks",dataset)))
     funcs = convert_peaks(funcs)
     return funcs
+
+def read_function_info(func):
+
+    l=[]
+    l.append("%" + func.name)
+    l.append(func.get_template_name())
+
+    std_pars = ["Center", "Height", "Area", "FWHM"]
+    for i in std_pars:
+        try:
+            l.append(func.get_param_value(i))
+        except:
+            l.append(np.nan)
+    i=0
+    while x:=func.get_param(i):
+        l.append(func.get_param_value(x))
+        i+=1
+    return l
+
+def read_functions(session, dataset):
+    """
+    Read all the fuctions of a dataset in the session
+    
+    Input
+    ------
+    session: Fityk
+        Fityk session
+    dataset: int
+        dataset index
+    Return
+    ------
+    dict:
+        dictionary with the function name as a key and
+        the parameters as the value
+    """
+    std_pars = ["Center", "Height", "Area", "FWHM"]
+    df = pd.DataFrame(read_function_info(func) for func in session.get_components(dataset))
+    df.columns = ["fid", "fname"] + std_pars + [f"a{n}" for n in range(len(df.columns)-6)] 
+    return df
+    # return [read_function_info(func) for func in session.get_components(dataset)]
+
+
 
 def export_data(session, outfolder):
     """
