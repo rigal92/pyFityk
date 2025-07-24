@@ -127,15 +127,87 @@ def convert_peaks(peaks):
     return peaks
 
 def split_data_text(content):
+    """
+    Split the function part when reading a .fit file as text.
+
+    Input
+    ------
+    content: str
+        text containing the data
+    Return
+    ------
+    list of pd.DataFrame
+        each element is a pd.DataFrame containing the data
+
+    """
     sections = re.split(r'(?=^use)', content, flags=re.IGNORECASE | re.MULTILINE)
     data = [
         pd.DataFrame([
             [float(x) for x in re.sub(r".\[[0-9]*\]=", "", s).split(",")] 
-                for s in section.splitlines() if s.startswith("X[")], columns = ["x","y","s","a"])
+                for s in section.splitlines() if s.startswith("X[")], columns = ["x","y","sigma","active"])
         for section in sections[1:]
         ]
-    # data = for a 
     return data
 
 def split_func_text(content):
-    return content.split("\n\n")
+    """
+    Split the function part when reading a .fit file as text.
+
+    Input
+    ------
+    content: str
+        text containing the data
+    Return
+    ------
+    tuple of dict
+        (parameters,functions) tuple. Both are dicts with
+        the parameter/function name as key and their value 
+
+    """
+
+    s = content.split("\n\n")
+    par, func = s[0], s[1]
+
+    if(par == "# ------------  variables and functions  ------------"):
+        return [], []
+    
+    #edit par
+    par = re.sub(r"( \[[0-9]*:[0-9]*\])|(~)", "", par)
+    par = dict([x.split(" = ") for x in par.split("\n")[1:]])
+    par = {lab:float(val) for lab, val in par.items()}
+    
+    #edit func
+    func = dict([x.split(" = ") for x in func.split("\n")])
+
+    return par, func
+
+def split_model_text(content, models, pars, funcs):
+    """
+    Split the model part when reading a .fit file as text.
+
+    Input
+    ------
+    content: str
+        text containing the data
+    Return
+    ------
+    # list of pd.DataFrame
+        # each element is a pd.DataFrame containing the functions
+
+    """
+    def format_line(fid):
+        func = funcs[fid]
+        fname, par = func.split("(")
+        par = par.rstrip(")").split(", ")
+        return [fid, fname] + [pars[p] for p in par]
+
+    s = content.split("\n\n")
+    s = s[0].split("\n")[1:]
+    for l in s:
+        index = int(l[1:l.find(":")])
+        fids = l.split(" = ")[1].split(" + ")
+        lines = [format_line(fid) for fid in fids]
+        df = pd.DataFrame(lines)
+        df.columns = columns = ["fid","fname"] + [f"a{i}"for i in range(len(df.columns)-2)]
+        models[index] = df
+    return models    

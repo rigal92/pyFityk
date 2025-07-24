@@ -107,7 +107,7 @@ def read_fityk(session):
         f = session
     funcs = [get_functions(f,i) for i in range(f.get_dataset_count())]
     data = [get_data(f,i) for i in range(f.get_dataset_count())]
-    return funcs, data
+    return data, funcs
 
 def read_fityk_text(filename):
     """
@@ -128,14 +128,24 @@ def read_fityk_text(filename):
     data = None
     funcs = None
 
-
+    #read sections
     for sec in sections:
+        if sec.startswith("# ------------  (un)defines  ------------"):
+            defines = sec
+            defines = [d for d in defines.strip().split("\n") if not d.startswith("#")]
         if sec.startswith("# ------------  datasets ------------"):
             data = split_data_text(sec)
         if sec.startswith("# ------------  variables and functions  ------------"):
-            funcs = split_func_text(sec)
+            pars, funcs = split_func_text(sec)
+            if (pars,funcs) == ([],[]):
+                models = []
+                break
+        if sec.startswith("# ------------  models  ------------"):
+            models = [None]*len(data)
+            models = split_model_text(sec, models, pars, funcs)
 
-    return data, funcs
+
+    return data, models
 
 # -----------------------------------------------------------------
 # Read from text files
