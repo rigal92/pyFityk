@@ -2,8 +2,9 @@ from fityk import Fityk, ExecuteError
 import pandas as pd
 import numpy as np
 from os.path import isfile
-from io import StringIO
+from io import *
 from .support import points_to_arrays, get_func_y, checkfolder, convert_peaks
+import re
 
 def get_data(session, dataset):
     """
