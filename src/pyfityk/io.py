@@ -137,13 +137,15 @@ def read_fityk_text(filename):
             data = split_data_text(sec)
         if sec.startswith("# ------------  variables and functions  ------------"):
             pars, funcs = split_func_text(sec)
-            if (pars,funcs) == ([],[]):
+            if (pars,funcs) == ({},{}):
                 models = []
                 break
         if sec.startswith("# ------------  models  ------------"):
             models = [None]*len(data)
             models = split_model_text(sec, models, pars, funcs)
 
+    if models != []:
+        add_missing(data, models)
 
     return data, models
 

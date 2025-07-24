@@ -161,15 +161,16 @@ def split_func_text(content):
     ------
     tuple of dict
         (parameters,functions) tuple. Both are dicts with
-        the parameter/function name as key and their value 
-
+        the parameter/function name as key and their value.
+        If there are no parameters, it return a tuple of two 
+        empty dictionaries.
     """
 
     s = content.split("\n\n")
     par, func = s[0], s[1]
 
     if(par == "# ------------  variables and functions  ------------"):
-        return [], []
+        return {}, {}
     
     #edit par
     par = re.sub(r"( \[[0-9]*:[0-9]*\])|(~)", "", par)
@@ -191,9 +192,9 @@ def split_model_text(content, models, pars, funcs):
         text containing the data
     Return
     ------
-    # list of pd.DataFrame
-        # each element is a pd.DataFrame containing the functions
-
+    list of pd.DataFrame:
+        list of DataFrame containing the functions
+        identifier, name and parameters 
     """
     def format_line(fid):
         func = funcs[fid]
