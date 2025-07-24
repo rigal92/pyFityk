@@ -211,4 +211,4 @@ def split_model_text(content, models, pars, funcs):
         df = pd.DataFrame(lines)
         df.columns = columns = ["fid","fname"] + [f"a{i}"for i in range(len(df.columns)-2)]
         models[index] = df
-    return models    
+    return models

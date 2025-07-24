@@ -141,13 +141,92 @@ def read_fityk_text(filename):
                 models = []
                 break
         if sec.startswith("# ------------  models  ------------"):
-            models = [None]*len(data)
+            models = [[]]*len(data)
             models = split_model_text(sec, models, pars, funcs)
 
-    if models != []:
-        add_missing(data, models)
-
+    # add missing parts in data and models
+    # if models != []:
+    #     f = Fityk()
+    #     for i in defines:
+    #         f.execute(i)
+    #     for d, m in zip(data,models):
+    #         if len(m) == 0:
+    #             continue
+    #         x = " + ".join([x.fname + "(" + ",".join(x.dropna()["a0":].astype(str)) + ")" for _,x in m.iterrows()]) # model for Fityk
+    #         f.load_data(0, d.x, d.y, d.sigma)
+    #         f.execute(f"@0.F = {x}")
     return data, models
+
+def read_fityk_text_bis(filename):
+    """
+    Read Fityk file and convert it to a python-like structure
+    Input
+    ------
+    filename: str
+        name of the template file
+    Return
+    ------
+    tuple (dict, dict):
+        return functions and y for each dataset
+    """
+    with open(filename) as f:
+        content = f.read()
+    sections = re.split(r'(?=^# ------------)', content, flags=re.IGNORECASE | re.MULTILINE)
+
+    f = Fityk()
+    f.execute("set verbosity = -1") 
+    
+    #read sections
+    for sec in sections:
+        if sec.startswith("# ------------  (un)defines  ------------"):
+            defines = sec
+            for d in [d for d in defines.split("\n")]:
+                f.execute(d)
+
+        if sec.startswith("# ------------  datasets ------------"):
+            data = [data.split("\n")[2:] for data in sec.strip().split("\n\n")]
+
+        if sec.startswith("# ------------  variables and functions  ------------"):
+            s = sec.split("\n\n")
+            par, funcs = s[0], s[1]
+
+            #edit par
+            par = dict([x.split(" = ") for x in par.split("\n")[1:]])
+
+            # edit func
+            funcs = funcs.strip()
+            if(funcs==""):
+                funcs = {}
+                models = {}
+                break             
+            else:
+                funcs = dict([x.split(" = ") for x in funcs.split("\n")])
+
+        if sec.startswith("# ------------  models  ------------"):
+            s = sec.split("\n\n")[0].split("\n")[1:]
+            models = {int(l[1:l.find(":")]): l.split(" = ")[1] for l in s}
+
+    for i, df in enumerate(data):
+        # f.execute("reset")
+        f.execute("F=0;delete @0")
+        for line in df:
+            f.execute(line)
+        if i in models:
+            model = models[i]
+            for fi in model.split(" + "):
+                fname = funcs[fi]
+                for p in re.findall(r"\$_[0-9]*", fname):
+                    f.execute(p+" = "+par[p])        
+                f.execute(fi+" = "+fname)        
+            
+
+
+
+    # print(models, sep="\n")
+    # f.execute("print all:y")
+
+
+    return 0,0
 
 # -----------------------------------------------------------------
 # Read from text files
