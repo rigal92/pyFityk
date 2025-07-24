@@ -2,7 +2,8 @@ from fityk import Fityk, ExecuteError
 import pandas as pd
 import numpy as np
 from os.path import isfile
-from .support import points_to_arrays, get_func_y, checkfolder
+from .support import *
+import re
 
 
 def export_data(session, outfolder):
@@ -114,3 +115,85 @@ def read_map(file, style = "jasko", split=250):
     if not split:
         save_session(fk,file)
 
+def read_dataset(session, dataset):
+    """
+    Read data and functions from a Fityk session and convert it to a python-like structure
+    Input
+    ------
+    session: Fityk
+        Fityk session
+    dataset: int
+        dataset id
+    Return
+    ------
+    tuple (dict, dict):
+        return functions and y for each dataset
+    """
+    funcs = read_functions(session, dataset) 
+    # data = get_coordinates(session, dataset)
+    return funcs, data
+
+def read_fityk(filename):
+    """
+    Read Fityk file and convert it to a python-like structure
+    Input
+    ------
+    filename: str
+        name of the template file
+    Return
+    ------
+    tuple (dict, dict):
+        return functions and y for each dataset
+    """
+    f = Fityk()
+    f.execute(f"reset; exec '{filename}'")
+    funcs = np.array([read_functions(f,i) for i in range(f.get_dataset_count())])
+    data = np.array([get_coordinates(f,i) for i in range(f.get_dataset_count())])
+    return funcs, data
+
+def read_fityk_text(filename):
+    """
+    Read Fityk file and convert it to a python-like structure
+    Input
+    ------
+    filename: str
+        name of the template file
+    Return
+    ------
+    tuple (dict, dict):
+        return functions and y for each dataset
+    """
+    with open(filename) as f:
+        content = f.read()
+    sections = re.split(r'(?=^# ------------)', content, flags=re.IGNORECASE | re.MULTILINE)
+
+    data = None
+    funcs = None
+
+    for sec in sections:
+        if sec.startswith("# ------------  datasets ------------"):
+            data = split_data_text(sec)
+
+    return data
+
+
+    # funcs = np.array([read_functions(f,i) for i in range(f.get_dataset_count())])
+    # data = np.array([get_coordinates(f,i) for i in range(f.get_dataset_count())])
+    # return funcs, data
+
+def read_fityk_bis(filename):
+    """
+    Read Fityk file and convert it to a python-like structure
+    Input
+    ------
+    filename: str
+        name of the template file
+    Return
+    ------
+    tuple (dict, dict):
+        return functions and y for each dataset
+    """
+    f = Fityk()
+    f.execute(f"reset; exec '{filename}'")
+    data = [read_dataset(f,i) for i in range(f.get_dataset_count())]
+    return data
