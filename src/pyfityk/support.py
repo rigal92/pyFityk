@@ -12,7 +12,6 @@ def checkfolder(folder):
         path+="/"
     return path
 
-
 def points_to_arrays(data):
     """
     Returns a list of points from the data
@@ -47,56 +46,48 @@ def get_func_y(x, func):
     """
     return np.array([func.value_at(i) for i in x])
 
-def get_coordinates(fityk, dataset):
-    return np.array([(x.x, x.y, x.is_active) for x in fityk.get_data(dataset)]).T
-
-def read_function_info(func):
-    def list_params(f):
-        l=[]
-        i=0
-        while x:=f.get_param(i):
-            l.append(f.get_param_value(x))
-            i+=1
-        return l
-    return func.get_template_name(),list_params(func)
-
-def read_functions(session, dataset):
+def read_function_pars(func):
     """
-    Read all the fuctions of a dataset in the session
-    
+    Read the function parameters
+
     Input
     ------
-    session: Fityk
-        Fityk session
-    dataset: int
-        dataset index
+    func: Fityk function
     Return
     ------
-    dict:
-        dictionary with the function name as a key and
-        the parameters as the value
+    list,
+        list of parameters in the format:
+        func ID, func name, Center, Height, Area, FWHM, a0...an
+        If the function does not have either one of the Center, Height, Area, 
+        FWHM parameters that is replaced by a NaN value
+
     """
-    return dict(read_function_info(func) for func in session.get_components(dataset))
+    l=[]
+    l.append("%" + func.name)
+    l.append(func.get_template_name())
 
-
-
-def split_data_text(content):
-    sections = re.split(r'(?=^use)', content, flags=re.IGNORECASE | re.MULTILINE)
-    data = [
-        [[float(x) for x in re.sub(r".\[[0-9]*\]=", "", s).split(",")] 
-                for s in section.splitlines() if s.startswith("X[")]
-        for section in sections[1:]
-        ]
-    # data = for a 
-    return data
-        
-def to_eV(n):
-    """Converts to eV for 532.1nm a dataset n"""
-    return f"@{n}: X=1.239842e3/532.1 - 1.23984198e-04*x"
+    std_pars = ["Center", "Height", "Area", "FWHM"]
+    for i in std_pars:
+        try:
+            l.append(func.get_param_value(i))
+        except:
+            l.append(np.nan)
+    i=0
+    while x:=func.get_param(i):
+        l.append(func.get_param_value(x))
+        i+=1
+    return l
+   
+def to_eV(n, wl=532.1):
+    """
+    Returns a string to convert to eV for a laser of wavelength 
+    **wl** a dataset **n**.
+    """
+    return f"@{n}: X=1.239842e3/{wl} - 1.23984198e-04*x"
 
 def convert_peaks(peaks):
     """
-    converts a pandas DataFrame of peaks into a easier
+    Converts a pandas DataFrame of peaks into a easier
     python formatting
 
     Input
@@ -134,3 +125,17 @@ def convert_peaks(peaks):
     peaks.drop(columns = ["# PeakType",'parameters...'],inplace = True)
 
     return peaks
+
+def split_data_text(content):
+    sections = re.split(r'(?=^use)', content, flags=re.IGNORECASE | re.MULTILINE)
+    data = [
+        pd.DataFrame([
+            [float(x) for x in re.sub(r".\[[0-9]*\]=", "", s).split(",")] 
+                for s in section.splitlines() if s.startswith("X[")], columns = ["x","y","s","a"])
+        for section in sections[1:]
+        ]
+    # data = for a 
+    return data
+
+def split_func_text(content):
+    return content.split("\n\n")

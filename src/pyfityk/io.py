@@ -3,12 +3,17 @@ import pandas as pd
 import numpy as np
 from os.path import isfile
 from io import *
-from .support import points_to_arrays, get_func_y, checkfolder, convert_peaks
+from .support import *
 import re
+
+
+# -----------------------------------------------------------------
+# Read from fityk session
+# -----------------------------------------------------------------
 
 def get_data(session, dataset):
     """
-    Export data
+    Get data from a session
     -----------------------------------------------------------------
     Inputs
     ------
@@ -30,6 +35,7 @@ def get_data(session, dataset):
         return df
     else:
         return xy
+
 def get_functions_DEP(session, dataset):
     """
     Extract dataset peaks
@@ -57,37 +63,6 @@ def get_functions_DEP(session, dataset):
     funcs = convert_peaks(funcs)
     return funcs
 
-def read_function_pars(func):
-    """
-    Read the function parameters
-
-    Input
-    ------
-    func: Fityk function
-    Return
-    ------
-    list,
-        list of parameters in the format:
-        func ID, func name, Center, Height, Area, FWHM, a0...an
-        If the function does not have either one of the Center, Height, Area, 
-        FWHM parameters that is replaced by a NaN value
-
-    """
-    l=[]
-    l.append("%" + func.name)
-    l.append(func.get_template_name())
-
-    std_pars = ["Center", "Height", "Area", "FWHM"]
-    for i in std_pars:
-        try:
-            l.append(func.get_param_value(i))
-        except:
-            l.append(np.nan)
-    i=0
-    while x:=func.get_param(i):
-        l.append(func.get_param_value(x))
-        i+=1
-    return l
 
 def get_functions(session, dataset):
     """
@@ -107,10 +82,141 @@ def get_functions(session, dataset):
     """
     std_pars = ["Center", "Height", "Area", "FWHM"]
     df = pd.DataFrame(read_function_pars(func) for func in session.get_components(dataset))
-    df.columns = ["fid", "fname"] + std_pars + [f"a{n}" for n in range(len(df.columns)-6)] 
+    if not df.empty:
+        df.columns = ["fid", "fname"] + std_pars + [f"a{n}" for n in range(len(df.columns)-6)] 
     return df
 
 
+def read_fityk(session):
+    """
+    Read Fityk file and convert it to a python-like structure
+    Input
+    ------
+    session: str or Fityk session
+        if the file is a string it opens a session with that filename
+        else it uses the Fityk session passed 
+    Return
+    ------
+    tuple (dict, dict):
+        return functions and y for each dataset
+    """
+    if isinstance(session, str):
+        f = Fityk()
+        f.execute(f"reset; exec '{session}'")
+    else:
+        f = session
+    funcs = [get_functions(f,i) for i in range(f.get_dataset_count())]
+    data = [get_data(f,i) for i in range(f.get_dataset_count())]
+    return funcs, data
+
+def read_fityk_text(filename):
+    """
+    Read Fityk file and convert it to a python-like structure
+    Input
+    ------
+    filename: str
+        name of the template file
+    Return
+    ------
+    tuple (dict, dict):
+        return functions and y for each dataset
+    """
+    with open(filename) as f:
+        content = f.read()
+    sections = re.split(r'(?=^# ------------)', content, flags=re.IGNORECASE | re.MULTILINE)
+
+    data = None
+    funcs = None
+
+
+    for sec in sections:
+        if sec.startswith("# ------------  datasets ------------"):
+            data = split_data_text(sec)
+        if sec.startswith("# ------------  variables and functions  ------------"):
+            funcs = split_func_text(sec)
+
+    return data, funcs
+
+# -----------------------------------------------------------------
+# Read from text files
+# -----------------------------------------------------------------
+
+def read_peaks(filename):
+    """
+    Reads a .peak fityk file and formats
+
+    Input
+    -----------------------------------------------
+    filename:str
+        file containg the fit results
+    Returns
+    -----------------------------------------------
+    pandas.DataFrame:
+        DataFrame containing the functions 
+        identifier, name and parameters  
+    """
+    #x is used for the quantities that do not have clearly defined one of the standard parameters (Center,Height...). They will be replaced by NaN
+    return convert_peaks(pd.read_table(filename,na_values = "x"))
+
+
+def read_map(file, style = "jasko", split=250):
+    """
+    Read a mapping file uploading spectra in fityk.
+    -----------------------------------------------------------------
+    file: str
+        name of the file 
+    style: str, default="jasko"
+        identify the formatting style of the mapping file
+        Accepted values:
+            - "jasko"
+    split: int, default=250
+        split files in *split* spectra files in order to reduce fitting 
+        time
+    """
+    fk = Fityk()
+    if style == "jasko":
+        with open(file) as f:
+            _ = [next(f) for i in range(13)]
+            xmap = list(map(float,next(f).split("\t")[1:]) )
+            ymap = list(map(float,next(f).split("\t")[1:]) )
+            points = len(xmap)
+        for i,(x,y) in enumerate(zip(xmap,ymap)):
+            s = f"@+ < '{file}:1:{i+2}::'"
+            fk.execute(s)
+            # rename dataset using positions
+            s = f"@{(fk.get_dataset_count()-1)}: title = '{x}:{y}'"
+            fk.execute(s)
+            if split and (((((i+1)%split) == 0) and i!=0) or i==(points-1)):
+                if "." in file:
+                    pos = file.rfind(".")
+                    fname = file[:pos] + f"_{i+1}" + file[pos:]
+                else:
+                    fname = file + f"_{i}"
+                save_session(fk,fname)
+                fk.execute("reset")
+    else:
+        raise ValueError(f"Style {style} not recognized.")
+        
+    if not split:
+        save_session(fk,file)
+
+#-----------------------------------------------------------------
+# Save and export
+#-----------------------------------------------------------------
+
+def save_session(session, filename):
+    """Save session after checking if filename exists"""
+    filename = ".".join(filename.split(".")[:-1]) + ".fit"
+    while(isfile(filename)):    
+        print(f"{filename} already exists, replace it? (y)/n")
+        if(input()=="n"):
+            print(f"Type new file name or c to cancel?")
+            if((filename:=input())=="c"):
+                print("WARNING! Session not saved.")
+                return
+        else:
+            break
+    session.execute("info state >'%s'" % filename)
 
 def export_data(session, outfolder):
     """
@@ -161,80 +267,4 @@ def export_peaks(session, outfolder, errors = False):
                 print(f"WARNING! No parametrized functions are used in the model for dataset @{i}. Exporting peaks without errors.")
                 s = f"@{i}: info peaks >'{outfolder}{title}.peaks'"
                 f.execute(s)
-
-    def read_peaks(filename):
-        """
-        Reads a .peak fityk file and formats
-
-        Input
-        -----------------------------------------------
-        filename:str
-            file containg the fit results
-        Returns
-        -----------------------------------------------
-        pandas.DataFrame:
-            DataFrame containing the functions 
-            identifier, name and parameters  
-        """
-        #x is used for the quantities that do not have clearly defined one of the standard parameters (Center,Height...). They will be replaced by NaN
-        return convert_peaks(pd.read_table(filename,na_values = "x"))
-
-
-def save_session(session, filename):
-    """Save session after checking if filename exists"""
-    filename = ".".join(filename.split(".")[:-1]) + ".fit"
-    while(isfile(filename)):    
-        print(f"{filename} already exists, replace it? (y)/n")
-        if(input()=="n"):
-            print(f"Type new file name or c to cancel?")
-            if((filename:=input())=="c"):
-                print("WARNING! Session not saved.")
-                return
-        else:
-            break
-    session.execute("info state >'%s'" % filename)
-
-def read_map(file, style = "jasko", split=250):
-    """
-    Read a mapping file uploading spectra in fityk.
-    -----------------------------------------------------------------
-    file: str
-        name of the file 
-    style: str, default="jasko"
-        identify the formatting style of the mapping file
-        Accepted values:
-            - "jasko"
-    split: int, default=250
-        split files in *split* spectra files in order to reduce fitting 
-        time
-
-
-
-    """
-    fk = Fityk()
-    if style == "jasko":
-        with open(file) as f:
-            _ = [next(f) for i in range(13)]
-            xmap = list(map(float,next(f).split("\t")[1:]) )
-            ymap = list(map(float,next(f).split("\t")[1:]) )
-            points = len(xmap)
-        for i,(x,y) in enumerate(zip(xmap,ymap)):
-            s = f"@+ < '{file}:1:{i+2}::'"
-            fk.execute(s)
-            # rename dataset using positions
-            s = f"@{(fk.get_dataset_count()-1)}: title = '{x}:{y}'"
-            fk.execute(s)
-            if split and (((((i+1)%split) == 0) and i!=0) or i==(points-1)):
-                if "." in file:
-                    pos = file.rfind(".")
-                    fname = file[:pos] + f"_{i+1}" + file[pos:]
-                else:
-                    fname = file + f"_{i}"
-                save_session(fk,fname)
-                fk.execute("reset")
-    else:
-        raise ValueError(f"Style {style} not recognized.")
-        
-    if not split:
-        save_session(fk,file)
 
