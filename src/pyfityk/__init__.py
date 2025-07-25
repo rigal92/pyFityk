@@ -1,2 +1,2 @@
-from .io import *
-from .support import *
+from pyfityk.io import *
+from pyfityk.support import *

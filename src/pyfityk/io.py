@@ -2,7 +2,6 @@ from fityk import Fityk, ExecuteError
 import pandas as pd
 import numpy as np
 from os.path import isfile
-from io import *
 from .support import *
 import re
 
