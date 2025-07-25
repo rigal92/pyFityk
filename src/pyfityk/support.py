@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import re
-import os 
+import os
 
 def checkfolder(folder):
     """check if folder exists and returns absolut path"""
@@ -126,6 +126,39 @@ def convert_peaks(peaks):
 
     return peaks
 
+def convert_peaks_bis(peaks):
+    """
+    Converts the output of info peaks in a DataFrame
+
+    Input
+    -----------------------------------------------
+    peaks: string
+        the unformatted peaks as they are returned 
+        from info peaks
+    Returns
+    -----------------------------------------------
+    pandas.DataFrame:
+        DataFrame containing the functions 
+        identifier, name and parameters
+
+    """
+
+    errors = "+/-" in peaks #check if errors are present
+    peaks = peaks.strip() #trailing spaces 
+    peaks = peaks.replace("+/-","")
+    peaks = peaks.replace("?","0")
+    peaks = pd.DataFrame([re.split("\s+",s)for s in peaks.split("\n")[1:]]) #split the lines, then columns
+    peaks = peaks.replace("x",None)
+    peaks.loc[:,2:] = peaks.loc[:,2:].astype(float)
+
+    if(errors):
+        pars_cols = [f"a{int(i/2)}" if (not i%2) else f"err_a{int(i/2)}" for i in range(len(peaks.columns)-6)]
+    else:
+        pars_cols = [f"a{i}" for i in range(len(peaks.columns)-6)]
+
+    peaks.columns = ["fid", "fname", "Center", "Height", "Area", "FWHM"] + pars_cols
+
+    return peaks
 def split_data_text(content):
     """
     Split the function part when reading a .fit file as text.

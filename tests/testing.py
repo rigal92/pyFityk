@@ -4,16 +4,17 @@ import cProfile
 
 def main(filename):
 
+    data, funcs = 0,0
     # f = Fityk()
     # f.execute(f"reset; exec '{filename}'")
 
-    cProfile.run("pfk.read_fityk(filename)")
+    # cProfile.run("pfk.read_fityk(filename)")
     # cProfile.run("pfk.read_fityk_text(filename)")
-    # cProfile.run("pfk.read_fityk_text_bis(filename)")
+    # cProfile.run("pfk.read_fityk_text_bis(filename, False)")
     # data, funcs = pfk.read_fityk(filename)
-    # data, funcs = pfk.read_fityk_text_bis(filename)
+    data, funcs = pfk.read_fityk_text_bis(filename)
     # print(data[0])
-    # print(funcs)
+    # print(*funcs, sep = "\n----------\n")
     # return data
     # fun = pfk.get_functions(f,1)
     # print(*funcs[:6], sep="\n---\n")
@@ -24,6 +25,7 @@ def main(filename):
     # print(data)
     # dataset = pfk.read_dataset(f,0)
     # print(dataset[0])
+    return data, funcs
 
 
 if __name__ == '__main__':
@@ -31,4 +33,4 @@ if __name__ == '__main__':
     # filename = "data/mapping_data/Template_spectra.fit"
     # filename = "data/Only_data.fit"
     # filename = "tests/fit_simple.fit"
-    data = main(filename)
+    data, funcs = main(filename)
