@@ -87,47 +87,6 @@ def to_eV(n, wl=532.1):
 
 def convert_peaks(peaks):
     """
-    Converts a pandas DataFrame of peaks into a easier
-    python formatting
-
-    Input
-    -----------------------------------------------
-    peaks:pd.DataFrame
-        the unformatted peaks as they are returned 
-        from info peaks
-    Returns
-    -----------------------------------------------
-    pandas.DataFrame:
-        DataFrame containing the functions 
-        identifier, name and parameters  
-
-    """
-    #split function name and id 
-    peaks = pd.concat(
-        [
-            pd.DataFrame([x.split() for x in peaks.loc[:,"# PeakType"]], columns = ["fid","fname"]),
-            peaks
-        ], 
-        axis=1)
-
-    #split the parameters that are placed all together by Fityk and replace ? by 0 for unknown errors 
-    errors = "+/-" in peaks.loc[:,"parameters..."][0]
-    pars = pd.DataFrame([map(float,x.replace("+/-","").replace("?","0").split()) if isinstance(x, str) else x for x in peaks.loc[:,"parameters..."]])
-    if(errors):
-        pars.columns = [f"a{int(i/2)}" if (not i%2) else f"err_a{int(i/2)}" for i in range(len(pars.columns))]
-    else:
-        pars.columns = [f"a{i}" for i in range(len(pars.columns))]
-
-    #adds the parameters 
-    peaks = peaks.join(pars)
-
-    #drop useless columns 
-    peaks.drop(columns = ["# PeakType",'parameters...'],inplace = True)
-
-    return peaks
-
-def convert_peaks_bis(peaks):
-    """
     Converts the output of info peaks in a DataFrame
 
     Input
@@ -159,6 +118,7 @@ def convert_peaks_bis(peaks):
     peaks.columns = ["fid", "fname", "Center", "Height", "Area", "FWHM"] + pars_cols
 
     return peaks
+
 def split_data_text(content):
     """
     Split the function part when reading a .fit file as text.

@@ -191,7 +191,7 @@ def read_fityk_text(filename, errors=True):
                     peaks = f.get_info("peaks",i)
             else:
                     peaks = f.get_info("peaks",i)
-            peaks = convert_peaks_bis(peaks)
+            peaks = convert_peaks(peaks)
             f_data.append(peaks)
 
             # f_data.append(get_functions(f,i))
@@ -222,7 +222,9 @@ def read_peaks(filename):
         identifier, name and parameters  
     """
     #x is used for the quantities that do not have clearly defined one of the standard parameters (Center,Height...). They will be replaced by NaN
-    return convert_peaks(pd.read_table(filename,na_values = "x"))
+    with open(filename) as f:
+        peaks = f.read()
+    return convert_peaks(peaks)
 
 
 def read_map(file, style = "jasko", split=250):
