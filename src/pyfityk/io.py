@@ -109,7 +109,7 @@ def read_fityk(session):
     data = [get_data(f,i) for i in range(f.get_dataset_count())]
     return data, funcs
 
-def read_fityk_text_bis(filename, errors=True):
+def read_fityk_text(filename, errors=True):
     """
     Read Fityk file and convert it to a python-like structure
     Input

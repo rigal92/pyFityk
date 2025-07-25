@@ -10,9 +10,8 @@ def main(filename):
 
     # cProfile.run("pfk.read_fityk(filename)")
     # cProfile.run("pfk.read_fityk_text(filename)")
-    # cProfile.run("pfk.read_fityk_text_bis(filename, False)")
     # data, funcs = pfk.read_fityk(filename)
-    data, funcs = pfk.read_fityk_text_bis(filename)
+    data, funcs = pfk.read_fityk_text(filename)
     # print(data[0])
     # print(*funcs, sep = "\n----------\n")
     # return data
