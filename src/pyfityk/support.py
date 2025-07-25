@@ -121,7 +121,7 @@ def convert_peaks(peaks):
 
 def split_data_text(content):
     """
-    Split the function part when reading a .fit file as text.
+    Split the data part when reading a .fit file as text.
 
     Input
     ------
@@ -133,13 +133,14 @@ def split_data_text(content):
         each element is a pd.DataFrame containing the data
 
     """
-    sections = re.split(r'(?=^use)', content, flags=re.IGNORECASE | re.MULTILINE)
+    sections = re.sub(r".\[[0-9]*\]=", "", content)
+    sections = sections.strip().split("\n\n")
     data = [
-        pd.DataFrame([
-            [float(x) for x in re.sub(r".\[[0-9]*\]=", "", s).split(",")] 
-                for s in section.splitlines() if s.startswith("X[")], columns = ["x","y","sigma","active"])
-        for section in sections[1:]
-        ]
+        pd.DataFrame(
+            [
+            [float(x) for x in s.split(",")]for s in section.splitlines()[5:]], columns = ["x","y","sigma","active"])
+            for section in sections[1:]
+            ]
     return data
 
 def split_func_text(content):

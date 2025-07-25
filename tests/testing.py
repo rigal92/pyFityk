@@ -12,14 +12,11 @@ def main(filename):
     # cProfile.run("pfk.read_fityk(filename)")
     # cProfile.run("pfk.read_fityk_text(filename)")
     # data, funcs = pfk.read_fityk(filename)
-    # data, funcs = pfk.read_fityk_text(filename)
-    # print(data[0])
+    data, funcs = pfk.read_fityk_text(filename)
+    print(data[0])
     # cProfile.run("pfk.read_peaks(filename)")
-    # cProfile.run("pfk.read_peaks_bis(filename)")
-    t1 = timeit(lambda :pfk.read_peaks(filename), number=1000)
-    t2 = timeit(lambda :pfk.read_peaks_bis(filename), number=1000)
-    print(t1)
-    print(t2)
+    # t1 = timeit(lambda :pfk.read_peaks(filename), number=1000)
+    # print(t1)
     # print(pfk.read_peaks(filename))
     # print(pfk.read_peaks_bis(filename))
     # print(*funcs, sep = "\n----------\n")
@@ -37,9 +34,9 @@ def main(filename):
 
 
 if __name__ == '__main__':
-    # filename = "data/mapping_data/Map_PL_500.fit"
+    filename = "data/mapping_data/Map_PL_500.fit"
     # filename = "data/mapping_data/Template_spectra.fit"
-    filename = "data/-3972.7:-5015.3.peaks"
+    # filename = "data/-3972.7:-5015.3.peaks"
     # filename = "data/Only_data.fit"
     # filename = "tests/fit_simple.fit"
     data, funcs = main(filename)

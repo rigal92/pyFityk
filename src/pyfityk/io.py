@@ -177,10 +177,7 @@ def read_fityk_text(filename, errors=True):
     dfs = []
     f_data = []
 
-    from io import StringIO
-
     for i in range((f.get_dataset_count())):
-
         if i in models:
             model = models[i]
             f.execute(f"@{i}:F ={model}")
@@ -193,14 +190,10 @@ def read_fityk_text(filename, errors=True):
                     peaks = f.get_info("peaks",i)
             peaks = convert_peaks(peaks)
             f_data.append(peaks)
-
-            # f_data.append(get_functions(f,i))
-            f.execute(f"@{i}:F=0")
         else:
             f_data.append([])
-
         dfs.append(get_data(f,i)) 
-
+        f.execute(f"@{i}:F=0")
     return dfs,f_data
 
 # -----------------------------------------------------------------
