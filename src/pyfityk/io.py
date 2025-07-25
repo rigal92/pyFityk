@@ -96,17 +96,18 @@ def read_fityk(session):
         else it uses the Fityk session passed 
     Return
     ------
-    tuple (list, list):
-        return the two lists of pd.DataFrame for the data and dunctions
+    tuple (list, list, list):
+        return the three lists of titles, pd.DataFrame for the data and functions
     """
     if isinstance(session, str):
         f = Fityk()
         f.execute(f"reset; exec '{session}'")
     else:
         f = session
+    title = [f.get_info("title",i) for i in range(f.get_dataset_count())]
     funcs = [get_functions(f,i) for i in range(f.get_dataset_count())]
     data = [get_data(f,i) for i in range(f.get_dataset_count())]
-    return data, funcs
+    return title, data, funcs
 
 def read_fityk_text(filename, errors=True):
     """
@@ -117,8 +118,8 @@ def read_fityk_text(filename, errors=True):
         name of the file
     Return
     ------
-    tuple (list, list):
-        return the two lists of pd.DataFrame for the data and dunctions
+    tuple (list, list, list):
+        return the three lists of titles, pd.DataFrame for the data and functions
     """
 
     def substitute_with_dict(text, pattern, replacements):
@@ -173,6 +174,7 @@ def read_fityk_text(filename, errors=True):
     for line in data:
         f.execute(line)
 
+    title = []
     dfs = []
     f_data = []
 
@@ -191,9 +193,10 @@ def read_fityk_text(filename, errors=True):
             f_data.append(peaks)
         else:
             f_data.append([])
+        title.append(f.get_info("title",i)) 
         dfs.append(get_data(f,i)) 
         f.execute(f"@{i}:F=0")
-    return dfs,f_data
+    return title, dfs, f_data
 
 # -----------------------------------------------------------------
 # Read from text files
