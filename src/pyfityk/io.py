@@ -111,7 +111,8 @@ def read_fityk(session):
 
 def read_fityk_text(filename, errors=True):
     """
-    Read Fityk file and convert it to a python-like structure
+    Read Fityk file and convert it to a python-like structure.
+    It is advisable to use instead of read_fityk.
     Input
     ------
     filename: str
