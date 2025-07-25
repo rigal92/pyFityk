@@ -101,7 +101,6 @@ def convert_peaks(peaks):
         identifier, name and parameters
 
     """
-
     errors = "+/-" in peaks #check if errors are present
     peaks = peaks.strip() #trailing spaces 
     peaks = peaks.replace("+/-","")
@@ -114,9 +113,7 @@ def convert_peaks(peaks):
         pars_cols = [f"a{int(i/2)}" if (not i%2) else f"err_a{int(i/2)}" for i in range(len(peaks.columns)-6)]
     else:
         pars_cols = [f"a{i}" for i in range(len(peaks.columns)-6)]
-
     peaks.columns = ["fid", "fname", "Center", "Height", "Area", "FWHM"] + pars_cols
-
     return peaks
 
 def split_data_text(content):

@@ -97,8 +97,8 @@ def read_fityk(session):
         else it uses the Fityk session passed 
     Return
     ------
-    tuple (dict, dict):
-        return functions and y for each dataset
+    tuple (list, list):
+        return the two lists of pd.DataFrame for the data and dunctions
     """
     if isinstance(session, str):
         f = Fityk()
@@ -115,11 +115,11 @@ def read_fityk_text(filename, errors=True):
     Input
     ------
     filename: str
-        name of the template file
+        name of the file
     Return
     ------
-    tuple (dict, dict):
-        return functions and y for each dataset
+    tuple (list, list):
+        return the two lists of pd.DataFrame for the data and dunctions
     """
 
     def substitute_with_dict(text, pattern, replacements):
