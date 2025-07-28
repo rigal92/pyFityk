@@ -7,15 +7,6 @@ import os
 import matplotlib.pyplot as plt
 import re
 
-def define_fitting_functions(session):
-    session.execute("define LorPLA01(height, center, hwhm) = Lorentzian(height, center, hwhm)")
-    session.execute("define LorPLA02(height, center, hwhm) = Lorentzian(height, center, hwhm)")
-    session.execute("define LorPLB01(height, center, hwhm) = Lorentzian(height, center, hwhm)")
-    session.execute("define A1g(height, center, hwhm) = Lorentzian(height, center, hwhm)")
-    session.execute("define E2g1(height, center, hwhm) = Lorentzian(height, center, hwhm)")
-    session.execute("define VoigtPLA01(height, center, gwidth=hwhm*0.8, shape=0.1[0:1]) = Voigt(height, center, gwidth, shape)")
-    session.execute("define VoigtPLA02(height, center, gwidth=hwhm*0.8, shape=0.1[0:1]) = Voigt(height, center, gwidth, shape)")
-    session.execute("define VoigtPLB01(height, center, gwidth=hwhm*0.8, shape=0.1[0:1]) = Voigt(height, center, gwidth, shape)")
 
 # -----------------------------------------------------------------
 # Help functions

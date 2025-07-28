@@ -3,6 +3,8 @@ import pandas as pd
 import re
 import os
 
+
+
 def checkfolder(folder):
     """check if folder exists and returns absolut path"""
     path = os.path.abspath(folder)
@@ -203,3 +205,48 @@ def split_model_text(content, models, pars, funcs):
         df.columns = columns = ["fid","fname"] + [f"a{i}"for i in range(len(df.columns)-2)]
         models[index] = df
     return models
+
+# -----------------------------------------------------------------
+# Functions defines
+# -----------------------------------------------------------------
+
+def get_define_functions(session):
+    """
+    Get all the define funtions in the Fityk **session**
+    Returns a dictionary {function name:function definition}
+
+    """
+    def count_equals(s):
+        """When constants are inserted as logs, exps ecc. sometimes
+        fityk calculates its value and shows it in get_info.
+        In this cas the outpus is formed by two equal signes with the
+        same formula. Taking here just the first version of the formula."""
+        # counting ' = ' instead of '=' as the latter is used for paramters defs
+        if s.count(" = ")>1:
+            s = " = ".join(s.split(" = ")[:2])
+        return s
+
+    functions_defs = session.get_info("types").split()
+    functions_defs = {f:count_equals(session.get_info(f))for f in functions_defs}
+    return functions_defs
+
+def set_define_functions(session, functions):
+    """
+    Defines new functions in a session.
+
+    Input
+    ------
+    session: Fityk
+        Fityk session
+    functions: dict
+        dictionary containing the functions in the form 
+        {function name:function definition acceptable in Fityk}
+        Example:
+            'Gaussian': 'Gaussian(height, center, hwhm) = height*exp(-ln(2)*((x-center)/hwhm)^2)'
+    """
+    present_functions = session.get_info("types")
+    for key,f in functions.items():
+        if key not in present_functions:
+            session.execute("define " + f)
+
+
