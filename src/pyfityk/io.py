@@ -104,10 +104,20 @@ def read_fityk(session):
         f.execute(f"reset; exec '{session}'")
     else:
         f = session
-    title = [f.get_info("title",i) for i in range(f.get_dataset_count())]
-    funcs = [get_functions(f,i) for i in range(f.get_dataset_count())]
-    data = [get_data(f,i) for i in range(f.get_dataset_count())]
-    return title, data, funcs
+    # title = [f.get_info("title",i) for i in range(f.get_dataset_count())]
+    # funcs = [get_functions(f,i) for i in range(f.get_dataset_count())]
+    # data = [get_data(f,i) for i in range(f.get_dataset_count())]
+    return [
+        {
+            "title":f.get_info("title",i),
+            "model":None,
+            "model_formula":f.get_info("gnuplot_formula",i),
+            "functions":get_functions(f,i),
+            "data":get_data(f,i),
+        }
+        for i in range(f.get_dataset_count())
+    ]
+    # title, data, funcs
 
 def read_fityk_text(filename, errors=True):
     """
@@ -119,8 +129,13 @@ def read_fityk_text(filename, errors=True):
         name of the file
     Return
     ------
-    tuple (list, list, list):
-        return the three lists of titles, pd.DataFrame for the data and functions
+    list of dict:
+        Each element of the list is a dictionary containing:
+        - title
+        - model (fityk like model)
+        - model_formula (general formula for the model)
+        - functions (a pd.DataFrame with the functions parameters)
+        - data (a pd.DataFrame with the data)
     """
 
     def substitute_with_dict(text, pattern, replacements):
@@ -175,11 +190,10 @@ def read_fityk_text(filename, errors=True):
     for line in data:
         f.execute(line)
 
-    title = []
     dfs = []
-    f_data = []
-
     for i in range((f.get_dataset_count())):
+        d = dict()
+        d["title"] = f.get_info("title",i)
         if i in models:
             model = models[i]
             f.execute(f"@{i}:F ={model}")
@@ -191,13 +205,17 @@ def read_fityk_text(filename, errors=True):
             else:
                     peaks = f.get_info("peaks",i)
             peaks = convert_peaks(peaks)
-            f_data.append(peaks)
+            d["model"] = model
+            d["model_formula"] = f.get_info("gnuplot_formula",i)
+            d["functions"] = peaks
         else:
+            fitting_functions.append(None)
+            fitting_functions_extended.append(None) 
             f_data.append([])
-        title.append(f.get_info("title",i)) 
-        dfs.append(get_data(f,i)) 
+        d["data"] = get_data(f,i)
         f.execute(f"@{i}:F=0")
-    return title, dfs, f_data
+        dfs.append(d)
+    return dfs
 
 # -----------------------------------------------------------------
 # Read from text files

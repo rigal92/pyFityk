@@ -12,65 +12,65 @@ import re
 # Help functions
 # -----------------------------------------------------------------
 
-def to_ev(x):
-    return 1.239842e3/532.1 - 1.23984198e-04*x
+# def to_ev(x):
+#     return 1.239842e3/532.1 - 1.23984198e-04*x
 
 
-def get_y(fityk, dataset):
-    return np.array([x.y for x in fityk.get_data(dataset)])
+# def get_y(fityk, dataset):
+#     return np.array([x.y for x in fityk.get_data(dataset)])
 
-def get_coordinates(fityk, dataset):
-    return np.array([(x.x, x.y, x.is_active) for x in fityk.get_data(dataset)]).T
+# def get_coordinates(fityk, dataset):
+#     return np.array([(x.x, x.y, x.is_active) for x in fityk.get_data(dataset)]).T
 
-def read_function_info(func):
-    def list_params(f):
-        l=[]
-        i=0
-        while x:=f.get_param(i):
-            l.append(f.get_param_value(x))
-            i+=1
-        return l
+# def read_function_info(func):
+#     def list_params(f):
+#         l=[]
+#         i=0
+#         while x:=f.get_param(i):
+#             l.append(f.get_param_value(x))
+#             i+=1
+#         return l
 
-    return func.get_template_name(),list_params(func)
+#     return func.get_template_name(),list_params(func)
 
-def read_functions(session, dataset):
-    """
-    Read all the fuctions of a dataset in the session
+# def read_functions(session, dataset):
+#     """
+#     Read all the fuctions of a dataset in the session
     
-    Input
-    ------
-    session: Fityk
-        Fityk session
-    dataset: int
-        dataset index
-    Return
-    ------
-    dict:
-        dictionary with the function name as a key and
-        the parameters as the value
-    """
-    return dict(read_function_info(func) for func in session.get_components(dataset))
+#     Input
+#     ------
+#     session: Fityk
+#         Fityk session
+#     dataset: int
+#         dataset index
+#     Return
+#     ------
+#     dict:
+#         dictionary with the function name as a key and
+#         the parameters as the value
+#     """
+#     return dict(read_function_info(func) for func in session.get_components(dataset))
 
 # -----------------------------------------------------------------
 # Template reading and matching
 # -----------------------------------------------------------------
-def read_fityk(filename):
-    """
-    Read file from Fityk to use as a template to initialize functions.
-    Input
-    ------
-    filename: str
-        name of the template file
-    Return
-    ------
-    tuple (dict, dict):
-        return functions and y for each dataset
-    """
-    f = Fityk()
-    f.execute(f"reset; exec '{filename}'")
-    funcs = np.array([read_functions(f,i) for i in range(f.get_dataset_count())])
-    data = np.array([get_coordinates(f,i) for i in range(f.get_dataset_count())])
-    return funcs, data
+# def read_fityk(filename):
+#     """
+#     Read file from Fityk to use as a template to initialize functions.
+#     Input
+#     ------
+#     filename: str
+#         name of the template file
+#     Return
+#     ------
+#     tuple (dict, dict):
+#         return functions and y for each dataset
+#     """
+#     f = Fityk()
+#     f.execute(f"reset; exec '{filename}'")
+#     funcs = np.array([read_functions(f,i) for i in range(f.get_dataset_count())])
+#     data = np.array([get_coordinates(f,i) for i in range(f.get_dataset_count())])
+#     return funcs, data
 
 def match_template(data_y, template_data):
     dist = euclidean_distances(template_data, data_y)
@@ -84,25 +84,6 @@ def initialize_function(name, parameters, dataset_id, const_functions=""):
     const = "" if constant else "~"
     pars = ",".join([const+str(i) for i in parameters]).rstrip(",")
     return f"@{dataset_id}.F += {name}({pars})"
-
-def deactivate_points(session, active, dataset):
-    """
-    Activate, deactivate points
-    
-    Inputs
-    ------
-    session: Fityk
-        Fityk session
-    active: array(bool)
-        bolean array for each point of the data
-    dataset: int
-        dataset index
-
-    """
-    for i,val in enumerate(active):
-        t = "true" if val else "false"
-        session.execute(f"@{dataset}:A[{i}]={t}")
-
 
 # -----------------------------------------------------------------
 # Fitting

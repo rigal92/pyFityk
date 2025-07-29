@@ -2,8 +2,13 @@ import numpy as np
 import pandas as pd
 import re
 import os
-
-
+   
+def to_eV(n, wl=532.1):
+    """
+    Returns a string to convert to eV for a laser of wavelength 
+    **wl** a dataset **n**.
+    """
+    return f"@{n}: X=1.239842e3/{wl} - 1.23984198e-04*x"
 
 def checkfolder(folder):
     """check if folder exists and returns absolut path"""
@@ -13,6 +18,10 @@ def checkfolder(folder):
     if not path.endswith("/"):
         path+="/"
     return path
+
+# -----------------------------------------------------------------
+# Get data and functions from Fityk session
+# -----------------------------------------------------------------
 
 def points_to_arrays(data):
     """
@@ -79,13 +88,6 @@ def read_function_pars(func):
         l.append(func.get_param_value(x))
         i+=1
     return l
-   
-def to_eV(n, wl=532.1):
-    """
-    Returns a string to convert to eV for a laser of wavelength 
-    **wl** a dataset **n**.
-    """
-    return f"@{n}: X=1.239842e3/{wl} - 1.23984198e-04*x"
 
 def convert_peaks(peaks):
     """
@@ -117,6 +119,10 @@ def convert_peaks(peaks):
         pars_cols = [f"a{i}" for i in range(len(peaks.columns)-6)]
     peaks.columns = ["fid", "fname", "Center", "Height", "Area", "FWHM"] + pars_cols
     return peaks
+
+# -----------------------------------------------------------------
+# Split fityk sections when reading as a fityk as text (NOT IN USE) 
+# -----------------------------------------------------------------
 
 def split_data_text(content):
     """
@@ -248,5 +254,27 @@ def set_define_functions(session, functions):
     for key,f in functions.items():
         if key not in present_functions:
             session.execute("define " + f)
+
+# -----------------------------------------------------------------
+# Edit Fityk session
+# -----------------------------------------------------------------
+
+def deactivate_points(session, active, dataset):
+    """
+    Activate, deactivate points
+    
+    Inputs
+    ------
+    session: Fityk
+        Fityk session
+    active: array(bool)
+        bolean array for each point of the data
+    dataset: int
+        dataset index
+
+    """
+    for i,val in enumerate(active):
+        t = "true" if val else "false"
+        session.execute(f"@{dataset}:A[{i}]={t}")
 
 

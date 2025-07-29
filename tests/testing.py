@@ -10,16 +10,18 @@ def main(filename):
     f.execute(f"reset; exec '{filename}'")
     funcs = pfk.get_define_functions(f)
 
-    f2 = Fityk()
-    print("First: " + f2.get_info("types"), "\n-----------\n")
-    pfk.set_define_functions(f2, funcs)
-    print("After: " + f2.get_info("types"))
+    # f2 = Fityk()
+    # print("First: " + f2.get_info("types"), "\n-----------\n")
+    # pfk.set_define_functions(f2, funcs)
+    # print("After: " + f2.get_info("types"))
 
     # cProfile.run("pfk.read_fityk(filename)")
     # cProfile.run("pfk.read_fityk_text(filename)")
-    # data, funcs = pfk.read_fityk(filename)
-    # data, funcs = pfk.read_fityk_text(filename)
-    # print(data[0])
+    data  = pfk.read_fityk(filename)
+    # data  = pfk.read_fityk_text(filename)
+    # names, data, funcs, models  = pfk.read_fityk_text(filename)
+    # print(*models, sep="\n")
+    print(data[1])
     
     # cProfile.run("pfk.read_peaks(filename)")
     # t1 = timeit(lambda :pfk.read_peaks(filename), number=1000)
@@ -41,8 +43,8 @@ def main(filename):
 
 
 if __name__ == '__main__':
-    # filename = "data/mapping_data/Map_PL_500.fit"
-    filename = "data/mapping_data/Template_spectra.fit"
+    filename = "data/mapping_data/Map_PL_500.fit"
+    # filename = "data/mapping_data/Template_spectra.fit"
     # filename = "data/-3972.7:-5015.3.peaks"
     # filename = "data/Only_data.fit"
     # filename = "tests/fit_simple.fit"
