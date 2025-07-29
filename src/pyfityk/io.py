@@ -83,6 +83,8 @@ def get_functions(session, dataset):
     df = pd.DataFrame(read_function_pars(func) for func in session.get_components(dataset))
     if not df.empty:
         df.columns = ["fid", "fname"] + std_pars + [f"a{n}" for n in range(len(df.columns)-6)] 
+    else:
+        return None
     return df
 
 
@@ -96,8 +98,13 @@ def read_fityk(session):
         else it uses the Fityk session passed 
     Return
     ------
-    tuple (list, list, list):
-        return the three lists of titles, pd.DataFrame for the data and functions
+    list of dict:
+        Each element of the list is a dictionary containing:
+        - title
+        - model (fityk like model) !!!NOT IMPLEMENTED returns None!!! 
+        - model_formula (general formula for the model)
+        - functions (a pd.DataFrame with the functions parameters)
+        - data (a pd.DataFrame with the data)
     """
     if isinstance(session, str):
         f = Fityk()
@@ -209,9 +216,9 @@ def read_fityk_text(filename, errors=True):
             d["model_formula"] = f.get_info("gnuplot_formula",i)
             d["functions"] = peaks
         else:
-            fitting_functions.append(None)
-            fitting_functions_extended.append(None) 
-            f_data.append([])
+            d["model"] = 0
+            d["model_formula"] = 0
+            d["functions"] = None
         d["data"] = get_data(f,i)
         f.execute(f"@{i}:F=0")
         dfs.append(d)
