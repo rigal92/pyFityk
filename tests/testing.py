@@ -6,8 +6,8 @@ from timeit import timeit
 
 def main(filename, file_template):
 
-    f = Fityk()
-    f.execute(f"reset; exec '{file_template}'")
+    # f = Fityk()
+    # f.execute(f"reset; exec '{file_template}'")
     # funcs = pfk.get_define_functions(f)
 
     # f2 = Fityk()
@@ -15,7 +15,7 @@ def main(filename, file_template):
     # pfk.set_define_functions(f2, funcs)
     # print("After: " + f2.get_info("types"))
 
-    # cProfile.run("pfk.read_fityk(filename)")
+    # cProfile.run("pfk.read_fityk(file_template)")
     # cProfile.run("pfk.read_fityk_text(filename)")
     # data  = pfk.read_fityk(filename)
     # data  = pfk.read_fityk_text(filename)
@@ -35,7 +35,7 @@ def main(filename, file_template):
 
     data = pd.read_table(filename, header=[13,14])
     x = 1.239842e3/532.1 - 1.23984198e-04*data.iloc[:,0]
-    pfk.fitMap(x, data.iloc[:,1:], file_template, fileout="data/temp.fit", verbosity=-1)
+    pfk.fitMap(x, data.iloc[:,1:], file_template, fileout="data/temp.fit", verbosity=-1, fit=True)
     # lambda:pfk.read_functions_bis(f,0)
     # print(timeit(lambda:pfk.read_functions(f,0), number=1000))
     # print(pfk.read_functions(f,0))
