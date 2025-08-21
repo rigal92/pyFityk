@@ -35,8 +35,7 @@ def main(filename, file_template):
 
     data = pd.read_table(filename, header=[13,14])
     x = 1.239842e3/532.1 - 1.23984198e-04*data.iloc[:,0]
-    data = data.iloc[::-1] #reorder after changing the x
-    pfk.fitMap(data.iloc[:,0].values, data.iloc[:,1:], file_template, fileout="temp.fit", verbosity=-1)
+    pfk.fitMap(x, data.iloc[:,1:], file_template, fileout="data/temp.fit", verbosity=-1)
     # lambda:pfk.read_functions_bis(f,0)
     # print(timeit(lambda:pfk.read_functions(f,0), number=1000))
     # print(pfk.read_functions(f,0))

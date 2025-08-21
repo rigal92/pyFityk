@@ -117,12 +117,12 @@ def fitMap(x, y_spectra, template, fileout="", verbosity=-1, split=0):
         set_define_functions(f, defines)
         f.execute(f"set max_wssr_evaluations=100")
         f.execute(f"set verbosity={verbosity}")
-        # f.execute("set fitting_method=mpfit")
+        f.execute("set fitting_method=mpfit")
 
     for i, (templ_id, (coord, y)) in enumerate(zip(templ_ids, y_spectra.items())):
         print(f"-----Fitting @{i}")
         match = template[templ_id]
-        title = ";".join(coord)
+        title = ";".join(coord) + f";K-{templ_id}"
         session.execute("@+ = 0")
         session.load_data(i, x, y, [], title)
         fitSpectrum(session, buffer_session, x, y, match, i)
