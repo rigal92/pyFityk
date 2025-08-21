@@ -19,6 +19,15 @@ def checkfolder(folder):
         path+="/"
     return path
 
+def substitute_with_dict(text, pattern, replacements):
+    """
+    Replace matches of a pattern in the text with values from a replacements dictionary.
+    """
+    def replacer(match):
+        key = match.group(0)
+        return replacements.get(key, key)
+    return re.sub(pattern, replacer, text)
+
 # -----------------------------------------------------------------
 # Get data and functions from Fityk session
 # -----------------------------------------------------------------
@@ -57,13 +66,43 @@ def get_func_y(x, func):
     """
     return np.array([func.value_at(i) for i in x])
 
-def read_function_pars(func):
+def read_functions(session, dataset, as_text=True):
+    """
+    Read all the fuctions of a dataset in the session
+    
+    Input
+    ------
+    session: Fityk
+        Fityk session
+    dataset: int
+        dataset index
+    as_text: bool, default=True
+        if True the functions are returned as string 
+    Return
+    ------
+    dict:
+        dictionary with the function id as a key and
+        the parameters as the value
+    """
+    if as_text:
+        F = session.get_info(f"F", dataset).split(" + ")
+        funcs = {f:session.get_info(f).split(" = ")[1] for f in F}
+        pars = {par:session.get_info(par).split(" = ")[1] for f in funcs.values() for par in f[f.index("(")+1:f.index(")")].split(", ")}
+        return {fid:substitute_with_dict(func,r"\$_[0-9]*",pars) for fid,func in funcs.items()}
+    else:
+        funcs = [read_function_pars(func, std=False) for func in session.get_components(dataset)]
+        return {f[0]:f[1:] for f in funcs}
+
+def read_function_pars(func, std=True):
     """
     Read the function parameters
 
     Input
     ------
     func: Fityk function
+    std: bool
+        Flag to include standard parameters: 
+        Center, Height, Area, FWHM
     Return
     ------
     list,
@@ -77,12 +116,13 @@ def read_function_pars(func):
     l.append("%" + func.name)
     l.append(func.get_template_name())
 
-    std_pars = ["Center", "Height", "Area", "FWHM"]
-    for i in std_pars:
-        try:
-            l.append(func.get_param_value(i))
-        except:
-            l.append(np.nan)
+    if std:
+        std_pars = ["Center", "Height", "Area", "FWHM"]
+        for i in std_pars:
+            try:
+                l.append(func.get_param_value(i))
+            except:
+                l.append(np.nan)
     i=0
     while x:=func.get_param(i):
         l.append(func.get_param_value(x))
@@ -109,7 +149,7 @@ def convert_peaks(peaks):
     peaks = peaks.strip() #trailing spaces 
     peaks = peaks.replace("+/-","")
     peaks = peaks.replace("?","0")
-    peaks = pd.DataFrame([re.split("\s+",s)for s in peaks.split("\n")[1:]]) #split the lines, then columns
+    peaks = pd.DataFrame([re.split(r"\s+",s)for s in peaks.split("\n")[1:]]) #split the lines, then columns
     peaks = peaks.replace("x",None)
     peaks.loc[:,2:] = peaks.loc[:,2:].astype(float)
 

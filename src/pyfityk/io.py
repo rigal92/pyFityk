@@ -145,15 +145,6 @@ def read_fityk_text(filename, errors=True):
         - data (a pd.DataFrame with the data)
     """
 
-    def substitute_with_dict(text, pattern, replacements):
-        """
-        Replace matches of a pattern in the text with values from a replacements dictionary.
-        """
-        def replacer(match):
-            key = match.group(0)
-            return replacements.get(key, key)
-        return re.sub(pattern, replacer, text)
-
     with open(filename) as f:
         content = f.read()
     sections = re.split(r'(?=^# ------------)', content, flags=re.IGNORECASE | re.MULTILINE)
@@ -248,7 +239,7 @@ def read_peaks(filename):
     return convert_peaks(peaks)
 
 
-def read_map(file, style = "jasko", split=250):
+def read_map(file, style = "jasko", split=250, save=True):
     """
     Read a mapping file uploading spectra in fityk.
     -----------------------------------------------------------------
@@ -261,6 +252,8 @@ def read_map(file, style = "jasko", split=250):
     split: int, default=250
         split files in *split* spectra files in order to reduce fitting 
         time
+    save: bool, default=True
+        save to file 
     """
     fk = Fityk()
     if style == "jasko":
@@ -275,7 +268,7 @@ def read_map(file, style = "jasko", split=250):
             # rename dataset using positions
             s = f"@{(fk.get_dataset_count()-1)}: title = '{x}:{y}'"
             fk.execute(s)
-            if split and (((((i+1)%split) == 0) and i!=0) or i==(points-1)):
+            if save and split and (((((i+1)%split) == 0) and i!=0) or i==(points-1)):
                 if "." in file:
                     pos = file.rfind(".")
                     fname = file[:pos] + f"_{i+1}" + file[pos:]
@@ -286,7 +279,7 @@ def read_map(file, style = "jasko", split=250):
     else:
         raise ValueError(f"Style {style} not recognized.")
         
-    if not split:
+    if save and (not split):
         save_session(fk,file)
 
 #-----------------------------------------------------------------

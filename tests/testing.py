@@ -1,13 +1,13 @@
 import pyfityk as pfk
+import pandas as pd
 from fityk import Fityk
 import cProfile
 from timeit import timeit
 
-def main(filename):
+def main(filename, file_template):
 
-    data, funcs = 0,0
-    # f = Fityk()
-    # f.execute(f"reset; exec '{filename}'")
+    f = Fityk()
+    f.execute(f"reset; exec '{file_template}'")
     # funcs = pfk.get_define_functions(f)
 
     # f2 = Fityk()
@@ -18,10 +18,10 @@ def main(filename):
     # cProfile.run("pfk.read_fityk(filename)")
     # cProfile.run("pfk.read_fityk_text(filename)")
     # data  = pfk.read_fityk(filename)
-    data  = pfk.read_fityk_text(filename)
+    # data  = pfk.read_fityk_text(filename)
     # names, data, funcs, models  = pfk.read_fityk_text(filename)
     # print(*models, sep="\n")
-    print(data)
+    # print(data)
     
     # cProfile.run("pfk.read_peaks(filename)")
     # t1 = timeit(lambda :pfk.read_peaks(filename), number=1000)
@@ -33,7 +33,17 @@ def main(filename):
     # fun = pfk.get_functions(f,1)
     # print(*funcs[:6], sep="\n---\n")
 
-    # data = pfk.get_data(f,1)
+    data = pd.read_table(filename, header=[13,14])
+    x = 1.239842e3/532.1 - 1.23984198e-04*data.iloc[:,0]
+    data = data.iloc[::-1] #reorder after changing the x
+    pfk.fitMap(data.iloc[:,0].values, data.iloc[:,1:], file_template, fileout="temp.fit", verbosity=-1)
+    # lambda:pfk.read_functions_bis(f,0)
+    # print(timeit(lambda:pfk.read_functions(f,0), number=1000))
+    # print(pfk.read_functions(f,0))
+    # print(pfk.read_functions(f,0, as_text=True))
+    return
+
+    # pfk.read_map(filename, save = False)
     # print(data)
 
     # print(data)
@@ -44,8 +54,13 @@ def main(filename):
 
 if __name__ == '__main__':
     # filename = "data/mapping_data/Map_PL_500.fit"
-    filename = "data/mapping_data/Template_spectra.fit"
+    # filename = "data/mapping_data/Map_PL_500.fit"
+    # filedata = "data/mapping_data/Map_PL.txt"
+    filedata = "data/mapping_data/Map_PL_small.txt"
+    file_template = "data/mapping_data/Template_spectra.fit"
+    
     # filename = "data/-3972.7:-5015.3.peaks"
     # filename = "data/Only_data.fit"
     # filename = "tests/fit_simple.fit"
-    main(filename)
+
+    main(filedata, file_template)
