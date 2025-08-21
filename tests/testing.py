@@ -34,7 +34,8 @@ def main(filename, file_template):
     # print(*funcs[:6], sep="\n---\n")
 
     data = pd.read_table(filename, header=[13,14])
-    x = 1.239842e3/532.1 - 1.23984198e-04*data.iloc[:,0]
+    x = data.iloc[:,0]
+    # x = 1.239842e3/532.1 - 1.23984198e-04*data.iloc[:,0]
     pfk.fitMap(x, data.iloc[:,1:], file_template, fileout="data/temp.fit", verbosity=-1, fit=True)
     # lambda:pfk.read_functions_bis(f,0)
     # print(timeit(lambda:pfk.read_functions(f,0), number=1000))
@@ -55,7 +56,7 @@ if __name__ == '__main__':
     # filename = "data/mapping_data/Map_PL_500.fit"
     # filename = "data/mapping_data/Map_PL_500.fit"
     # filedata = "data/mapping_data/Map_PL.txt"
-    filedata = "data/mapping_data/Map_PL_small.txt"
+    filedata = "data/mapping_data/Map_PL_small_eV.txt"
     file_template = "data/mapping_data/Template_spectra.fit"
     
     # filename = "data/-3972.7:-5015.3.peaks"

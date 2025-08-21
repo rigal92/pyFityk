@@ -17,6 +17,20 @@ def match_template(data_y, template_data):
     dist = euclidean_distances(template_data, data_y)
     return dist.argmin(axis=0)
 
+def edit_filename(filename, obj, replace=False):
+    """Edits filename. If replace==True **obj** will replace the extension.
+    Else **ojb** is inserted before the extension"""
+    if "." in filename:
+        idx = filename.rfind(".")
+        if replace:
+            return filename[:idx] + obj
+        else:
+            return filename[:idx] + "_" + str(obj) + filename[idx:]
+    else:
+        if replace:
+            return filename + "_" + str(obj)
+        else:
+            return filename + "_" + str(obj)
 # -----------------------------------------------------------------
 # Fitting
 # -----------------------------------------------------------------
@@ -117,37 +131,43 @@ def fitMap(x, y_spectra, template, fileout="", verbosity=-1, split=0, fit=True, 
         if i!=0: session.execute("@+ = 0")
         session.load_data(i, x, y, [], title)
         fitSpectrum(session, buffer_session, x, y, match, i, fit)
-        if (fileout!="") and split and (i%split == 0):
-            if "."in fileout:
-                idx = fileout.rfind(".")
-                fout = fileout[:idx] + "_" + str(i) + fileout[idx:]
-            else:
-                fout = fileout + "_" + str(i)
+        if (fileout!="") and split and ((i+1)%split == 0):
+            fout = edit_filename(fileout, i+1)
             print("-"*10, "Saving file","-"*10, sep="\n")
             session.execute(f"info state > '{fout}'")
     if fileout!="":
         if split:
-            fout = fileout + "_" + str(i)
+            fout = edit_filename(fileout, i)
             session.execute(f"info state > '{fout}'")
         else:
             session.execute(f"info state > '{fileout}'")
-
-if __name__ == '__main__':
+def main():
     import argparse
     parser = argparse.ArgumentParser("")
-    parser.add_argument("file", help="file .fit containing the data")
-    parser.add_argument("--raman", action="store_true", help="fit raman files")
-    parser.add_argument("--template", action="store", help="template file to get spectra kinds")
-    
-    parser.add_argument("--PL", action="store_true", help="fit PL files")
-
+    parser.add_argument("file", help="file containing the data")
+    parser.add_argument("template", help="template file to get spectra kinds")
+    parser.add_argument("--out", default="", help="template file to get spectra kinds")
+    parser.add_argument("--style", default="jasko", help="Style of the input file")
+    parser.add_argument("--split", type=int, default=0, help="Splits the output file")
     args = parser.parse_args()
+    
+    out = args.out
+    style = args.style
 
-    file = args.file
-    template = args.template
+    accepted_styles = ["jasko"]
+    if style not in accepted_styles:
+        parser.error("Unknown style.")        
+    elif args.style=="jasko":
+        data = pd.read_table(args.file, header=[13,14])
+        x = data.iloc[:,0]
+        ys = data.iloc[:,1:]
 
-    f = Fityk()
-    if(args.PL):
-        fitMap(file, template, save=True)
-    if(args.raman):
-        fitMap(file, template, "Raman", save=True, const_functions ="")
+    if out == "":
+        out = edit_filename(args.file, ".fit", replace=True)
+
+    fitMap(x, ys,  args.template, fileout=out, split=args.split)
+
+if __name__ == '__main__':
+    main()
+
+
