@@ -1,10 +1,12 @@
 import pyfityk as pfk
+from pyfityk.mapping import match_template
 import pandas as pd
 from fityk import Fityk
+import matplotlib.pyplot as plt
 import cProfile
 from timeit import timeit
 
-def main(filename, file_template):
+def main(filename, file_template, file_template_data):
 
     # f = Fityk()
     # f.execute(f"reset; exec '{file_template}'")
@@ -19,7 +21,10 @@ def main(filename, file_template):
     # cProfile.run("pfk.read_fityk_text(filename)")
     # data  = pfk.read_fityk(filename)
     # data  = pfk.read_fityk_text(filename)
-    # names, data, funcs, models  = pfk.read_fityk_text(filename)
+    # data  = pfk.read_fityk_text(file_template)
+    # template = pd.DataFrame([x["data"].y for x in data]).T
+    # print(template)
+    # template.to_csv("data/mapping_data/Template.dat", sep = "\t", index=None, header=None)
     # print(*models, sep="\n")
     # print(data)
     
@@ -34,22 +39,26 @@ def main(filename, file_template):
     # print(*funcs[:6], sep="\n---\n")
 
     data = pd.read_table(filename, header=[13,14])
+    data_template = pd.read_table(file_template_data, header = None)
     x = data.iloc[:,0]
-    # x = 1.239842e3/532.1 - 1.23984198e-04*data.iloc[:,0]
-    pfk.fitMap(x, data.iloc[:,1:], file_template, fileout="data/temp.fit", verbosity=-1, fit=True)
-    # lambda:pfk.read_functions_bis(f,0)
-    # print(timeit(lambda:pfk.read_functions(f,0), number=1000))
-    # print(pfk.read_functions(f,0))
-    # print(pfk.read_functions(f,0, as_text=True))
-    return
+    # y1 = data.iloc[:,20]
+    # y2 = data_template.iloc[:,1]
+    # t = match_template(data.iloc[:,1:].T.values, data_template.T.values, "pearsonr")
+    # t2 = match_template(data.iloc[:,1:].T.values, data_template.T.values, "pearsonr", smooth=False)
+    # plt.plot(t2-t1)
+    # t = [match_template(data.iloc[:,1:].T.values, data_template.T.values, method) for method in ["euclidean", "cosine", "manhattan"]]
+    # print(t)
 
-    # pfk.read_map(filename, save = False)
-    # print(data)
+    # plt.plot(y1, "-o", label="euclideanean")
+    # plt.plot(y2, "-o", label="cosine")
+    # plt.plot(t[2], "-o", label="manhattan")
+    # plt.legend()
+    # plt.show()
 
-    # print(data)
-    # dataset = pfk.read_dataset(f,0)
-    # print(dataset[0])
-    # return data, funcs
+    pfk.fitMap(x, data.iloc[:,1:], file_template, match_preprocess=True, fileout="data/match_euclidean.fit", verbosity=-1, fit=False, match_method="euclidean")
+    pfk.fitMap(x, data.iloc[:,1:], file_template, match_preprocess="norm smooth", fileout="data/match_cosine.fit", verbosity=-1, fit=False, match_method="cosine")
+    pfk.fitMap(x, data.iloc[:,1:], file_template, match_preprocess="normbase", fileout="data/match_manhattan.fit", verbosity=-1, fit=False, match_method="manhattan")
+    pfk.fitMap(x, data.iloc[:,1:], file_template, match_preprocess=False, fileout="data/match_pearsonr.fit", verbosity=-1, fit=False, match_method="pearsonr")
 
 
 if __name__ == '__main__':
@@ -58,9 +67,10 @@ if __name__ == '__main__':
     # filedata = "data/mapping_data/Map_PL.txt"
     filedata = "data/mapping_data/Map_PL_small_eV.txt"
     file_template = "data/mapping_data/Template_spectra.fit"
+    file_template_data = "data/mapping_data/Template.dat"
     
     # filename = "data/-3972.7:-5015.3.peaks"
     # filename = "data/Only_data.fit"
     # filename = "tests/fit_simple.fit"
 
-    main(filedata, file_template)
+    main(filedata, file_template, file_template_data)
