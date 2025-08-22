@@ -2,25 +2,28 @@ from fityk import Fityk
 import argparse
 import pyfityk.io as io
 import os 
-import sys 
+import sys
 
+def main():
+    argv = list(sys.argv[1:] if argv is None else argv)
+
+    if not argv:
+        print("Usage: python -m pyfityk <command> [options]")
+        print("Available submodules: export, mapping")
+        return 1
+
+    subcommand = argv.pop(0)
+
+    try:
+        mod = import_module(f"mypackage.{subcommand}")
+    except ModuleNotFoundError:
+        print(f"Unknown submodule: {subcommand}")
+        return 1
+
+    if not hasattr(mod, "main"):
+        print(f"Submodule {subcommand} has no main()")
+        return 1
+
+    return mod.main(argv)
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser("")
-    parser.add_argument("file")
-    parser.add_argument("-o", dest="output", nargs="?", default="", help="output folder. If nothing is passed the *file* containing folder is used")
-    parser.add_argument("--errors", dest="errors", action="store_true", help="flag to enable the export of the peaks' parameters errors")
-    parser.add_argument("--data-only", dest="do", action="store_true", help="export only data")
-    parser.add_argument("--peaks-only", dest="po", action="store_true", help="export peaks data")
-    args = parser.parse_args()
-    file = args.file
-
-    output = args.output
-    if output == "":
-        output = os.path.dirname(file)
-
-    f = Fityk()
-    f.execute(f"exec '{file}'")
-    if not args.po:
-        io.export_data(f, output)
-    if not args.do:
-        io.export_peaks(f, output, args.errors)
+    sys.exit(main())
