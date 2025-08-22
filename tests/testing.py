@@ -65,8 +65,9 @@ if __name__ == '__main__':
     # filename = "data/mapping_data/Map_PL_500.fit"
     # filename = "data/mapping_data/Map_PL_500.fit"
     # filedata = "data/mapping_data/Map_PL.txt"
-    filedata = "data/mapping_data/Map_PL_small_eV.txt"
-    file_template = "data/mapping_data/Template_spectra.fit"
+    filedata = "data/mapping_data/Map_Raman.txt"
+    # filedata = "data/mapping_data/Map_PL_small_eV.txt"
+    file_template = "data/mapping_data/Template_spectra_Raman.fit"
     file_template_data = "data/mapping_data/Template.dat"
     
     # filename = "data/-3972.7:-5015.3.peaks"

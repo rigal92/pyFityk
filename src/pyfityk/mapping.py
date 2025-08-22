@@ -140,7 +140,7 @@ def fitMap(x, y_spectra, template, fileout="", verbosity=-1, split=0, fit=True, 
         subfiles. Each subfile will contain **split** number of datasets.
     fit: bool, default=True
         toggles the fitting of the spectra. If False, the template initial
-        model is added but not fitted.
+        model is added but not fitted. Usefull to check the template matching
     match_method: str, default="pearsonr"
         defines the method used for matching the spectra with the template
         Possible values:
