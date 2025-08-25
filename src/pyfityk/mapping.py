@@ -12,7 +12,7 @@ import numpy as np
 # Help functions
 # -----------------------------------------------------------------
 
-def match_template(data_y, template_data, metric="euclidean", normalize=True, smooth=True, baseline=True):
+def match_template(data_y, template_data, metric="pearsonr", normalize=True, smooth=True, baseline=True):
     """
     Finds the spectrum in template_data that is most similar to each one in 
     data_y. Metric is the method used for the matching.
@@ -192,7 +192,8 @@ def fitMap(x, y_spectra, template, fileout="", verbosity=-1, split=0, fit=True, 
         normalize=smooth=baseline=False
     template = read_fityk_text(template)
     template_y = np.array([d["data"]["y"] for d in template])
-    templ_ids = match_template(y_spectra.T.values, template_y, match_method, normalize, smooth, baseline)
+
+    templ_ids = match_template(y_spectra.T.values, template_y, metric=match_method, normalize=normalize, smooth=smooth, baseline=baseline)
 
     session = Fityk()
     buffer_session = Fityk()
@@ -221,33 +222,4 @@ def fitMap(x, y_spectra, template, fileout="", verbosity=-1, split=0, fit=True, 
             session.execute(f"info state > '{fout}'")
         else:
             session.execute(f"info state > '{fileout}'")
-def main():
-    import argparse
-    parser = argparse.ArgumentParser("")
-    parser.add_argument("file", help="file containing the data")
-    parser.add_argument("template", help="template file to get spectra kinds")
-    parser.add_argument("--out", default="", help="template file to get spectra kinds")
-    parser.add_argument("--style", default="jasko", help="Style of the input file")
-    parser.add_argument("--split", type=int, default=0, help="Splits the output file")
-    args = parser.parse_args()
-    
-    out = args.out
-    style = args.style
-
-    accepted_styles = ["jasko"]
-    if style not in accepted_styles:
-        parser.error("Unknown style.")        
-    elif args.style=="jasko":
-        data = pd.read_table(args.file, header=[13,14])
-        x = data.iloc[:,0]
-        ys = data.iloc[:,1:]
-
-    if out == "":
-        out = edit_filename(args.file, ".fit", replace=True)
-
-    fitMap(x, ys,  args.template, fileout=out, split=args.split)
-
-if __name__ == '__main__':
-    main()
-
 
