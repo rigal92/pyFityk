@@ -48,9 +48,12 @@ def mapping(argv=None):
     if style not in accepted_styles:
         parser.error("Unknown style.")        
     elif args.style=="jasko":
-        data = pd.read_table(args.file, header=[13,14])
+        data = pd.read_table(args.file, header=[13,14], dtype=float)
         x = data.iloc[:,0]
         ys = data.iloc[:,1:]
+
+        # x = data.iloc[:,0].astype(float)
+        # ys = data.iloc[:,1:].astype(float)
 
     if out == "":
         out = edit_filename(args.file, ".fit", replace=True)
