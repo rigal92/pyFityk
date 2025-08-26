@@ -36,6 +36,7 @@ def mapping(argv=None):
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output from Fityk")
     parser.add_argument("--match_preprocess", default="", help="Add data preprocessing for the spectra template matching. Possible inputs are b=baseline subtracrtion, n=normalize, s=smooth, a=all.")
     parser.add_argument("--split", type=int, default=0, help="Splits the output file")
+    parser.add_argument("--nofit", action="store_false", help="Set up but does not perform fit")
 
     args = parser.parse_args(argv)
     
@@ -68,5 +69,5 @@ def mapping(argv=None):
             print("Unknown preprocess option. Accepted keys are b, n, s, a.")
             return 1
 
-    fitMap(x, ys,  args.template, fileout=out, split=args.split, match_preprocess=preprocess, verbosity = verbose)
+    fitMap(x, ys,  args.template, fileout=out, split=args.split, fit=args.nofit, match_preprocess=preprocess, verbosity = verbose)
     return 0
