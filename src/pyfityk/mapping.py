@@ -184,7 +184,6 @@ def fitMap(x, y_spectra, template_file, fileout="", verbosity=-1, split=0, fit=T
     template_y = np.array([d["data"]["y"] for d in template])
 
     templ_ids = match_template(y_spectra.T.values, template_y, metric=match_method, normalize=normalize, smooth=smooth, baseline=baseline)
-
     session = Fityk()
     buffer_session = Fityk()
 
@@ -196,7 +195,7 @@ def fitMap(x, y_spectra, template_file, fileout="", verbosity=-1, split=0, fit=T
     for i, (templ_id, (coord, y)) in enumerate(zip(templ_ids, y_spectra.items())):
         print(f"-----Fitting @{i}")
         match = template[templ_id]
-        title = ";".join(coord) + f";K-{templ_id}"
+        title = ";".join(coord) + f";ID-{templ_id}"
         if i%split!=0: session.execute("@+ = 0")
         session.load_data(i%split, x, y, [], title)
         fitSpectrum(session, buffer_session, x, y, match, i%split, fit)
@@ -209,7 +208,7 @@ def fitMap(x, y_spectra, template_file, fileout="", verbosity=-1, split=0, fit=T
             session.execute(initials["sets"])
     if fileout!="":
         if split:
-            if (i+1)!=len(templ_ids):
+            if len(templ_ids)%split!=0:
                 fout = edit_filename(fileout, i+1)
                 session.execute(f"info state > '{fout}'")
         else:
