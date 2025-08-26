@@ -1,4 +1,19 @@
 import argparse
+doc_methods = """
+Possible values:
+    default="pearsonr"
+    - from manual implementation:
+        ['pearsonr']
+
+    - from scikit-learn: ['cityblock', 'cosine', 'euclidean', 'l1', 'l2',
+     'manhattan', 'nan_euclidean']
+
+    - from :mod:`scipy.spatial.distance`: ['braycurtis', 'canberra', 'chebyshev',
+      'correlation', 'dice', 'hamming', 'jaccard', 'kulsinski',
+      'mahalanobis', 'minkowski', 'rogerstanimoto', 'russellrao',
+      'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean',
+      'yule']
+"""
 
 def exporter(argv=None):
     from pyfityk import io
@@ -35,6 +50,7 @@ def mapping(argv=None):
     parser.add_argument("--style", default="jasko", help="Style of the input file")
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output from Fityk")
     parser.add_argument("--match_preprocess", default="", help="Add data preprocessing for the spectra template matching. Possible inputs are b=baseline subtracrtion, n=normalize, s=smooth, a=all.")
+    parser.add_argument("--match_method", default="pearsonr", help="Method used for matching the template.\n"+doc_methods)
     parser.add_argument("--split", type=int, default=0, help="Splits the output file")
     parser.add_argument("--nofit", action="store_false", help="Set up but does not perform fit")
 
@@ -69,5 +85,5 @@ def mapping(argv=None):
             print("Unknown preprocess option. Accepted keys are b, n, s, a.")
             return 1
 
-    fitMap(x, ys,  args.template, fileout=out, split=args.split, fit=args.nofit, match_preprocess=preprocess, verbosity = verbose)
+    fitMap(x, ys,  args.template, fileout=out, split=args.split, fit=args.nofit, match_preprocess=preprocess, match_method=args.match_method, verbosity = verbose)
     return 0

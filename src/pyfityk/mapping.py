@@ -1,12 +1,11 @@
 from fityk import Fityk
-from pyfityk.io import read_fityk_text
-from pyfityk.support import *
 from sklearn.metrics.pairwise import pairwise_distances_argmin
 from scipy.stats import pearsonr
 from scipy.signal import savgol_filter
 import pandas as pd
 import numpy as np
-
+from pyfityk.io import read_fityk_text
+from pyfityk.support import *
 
 # -----------------------------------------------------------------
 # Help functions
