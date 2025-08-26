@@ -1,6 +1,6 @@
 from fityk import Fityk
 from pyfityk.io import read_fityk_text
-from pyfityk.support import get_define_functions, set_define_functions, deactivate_points, read_functions
+from pyfityk.support import *
 from sklearn.metrics.pairwise import pairwise_distances_argmin
 from scipy.stats import pearsonr
 from scipy.signal import savgol_filter
@@ -116,7 +116,7 @@ def fitSpectrum(session, buffer_session, x, y, template, dataset, fit=True):
     for func in funcs.values():
         session.execute(f"@{dataset}.F+={func}")
 
-def fitMap(x, y_spectra, template, fileout="", verbosity=-1, split=0, fit=True, match_method="pearsonr", match_preprocess=False, fitting_method="mpfit", max_wssr_evaluations=100):
+def fitMap(x, y_spectra, template_file, fileout="", verbosity=-1, split=0, fit=True, match_method="pearsonr", match_preprocess=False):
     """
     Fit a batch of spectra. The initial conditions are obtained by matching
     the y_spectra to a template.
@@ -127,8 +127,8 @@ def fitMap(x, y_spectra, template, fileout="", verbosity=-1, split=0, fit=True, 
         spectra x values
     y: pd.DataFrame
         data frame where each column is a spectrum
-    template: string
-        name of a .fit Fityk file used as template for the initial model used
+    template_file: str
+        name of a Fityk file used as template for the initial model used
         for fitting the spectra
     fileout: string, default=""
         if different to "", fileout is used as a file name to save the settions
@@ -162,25 +162,9 @@ def fitMap(x, y_spectra, template, fileout="", verbosity=-1, split=0, fit=True, 
         - True: performs costant baseline subtraction, smoothing and normalization
         - str: the 'base', 'smooth' and 'norm' keywords can be used to toggle 
         the corresponging preprocess. For example: 'base norm' will perform
-        baseline correction and normalization before performing the matching
-    fitting_method: str, default=mpfit
-        sets the fitting method. 
-        Accepted values: 
-            levenberg_marquardt, mpfit, nelder_mead_simplex, genetic_algorithms,
-            nlopt_nm, nlopt_lbfgs, nlopt_var2, nlopt_praxis, nlopt_bobyqa, 
-            nlopt_sbplx.
-    max_wssr_evaluations: int, default=100
-        the maximum number of evaluations of the objective function (WSSR)
-        0=unlimited    
+        baseline correction and normalization before performing the matching  
     """
-    def get_defines(template):
-        f = Fityk()
-        f.execute(f"exec '{template}'")
-        defines = get_define_functions(f)
-        return defines
-    defines = get_defines(template)
 
-    #TODO: once read_fityk is properly implemented merge it with the above part of defines 
     if match_preprocess:
         if match_preprocess == True:
             normalize=smooth=baseline=True
@@ -190,7 +174,14 @@ def fitMap(x, y_spectra, template, fileout="", verbosity=-1, split=0, fit=True, 
             baseline = "base" in match_preprocess
     else:
         normalize=smooth=baseline=False
-    template = read_fityk_text(template)
+
+    template = Fityk()
+    template.execute(f"exec '{template_file}'")
+    initials = get_session_initials(template)
+    initials["sets"] = re.sub(r"set verbosity = (.*?);", f"set verbosity = {verbosity};", initials["sets"])
+
+    #TODO: once read_fityk is properly implemented to read limits and constants merge it with the above part of defines 
+    template = read_fityk_text(template_file)
     template_y = np.array([d["data"]["y"] for d in template])
 
     templ_ids = match_template(y_spectra.T.values, template_y, metric=match_method, normalize=normalize, smooth=smooth, baseline=baseline)
@@ -198,24 +189,25 @@ def fitMap(x, y_spectra, template, fileout="", verbosity=-1, split=0, fit=True, 
     session = Fityk()
     buffer_session = Fityk()
 
-    #initial general sets for 
+    #initial general sets for sessions 
     for f in [session, buffer_session]:
-        set_define_functions(f, defines)
-        f.execute(f"set max_wssr_evaluations={max_wssr_evaluations}")
-        f.execute(f"set verbosity={verbosity}")
-        f.execute(f"set fitting_method={fitting_method}")
+        set_define_functions(f, initials["defines"])
+        f.execute(initials["sets"])
 
     for i, (templ_id, (coord, y)) in enumerate(zip(templ_ids, y_spectra.items())):
         print(f"-----Fitting @{i}")
         match = template[templ_id]
         title = ";".join(coord) + f";K-{templ_id}"
         if i!=0: session.execute("@+ = 0")
-        session.load_data(i, x, y, [], title)
-        fitSpectrum(session, buffer_session, x, y, match, i, fit)
+        session.load_data(i%split, x, y, [], title)
+        fitSpectrum(session, buffer_session, x, y, match, i%split, fit)
         if (fileout!="") and split and ((i+1)%split == 0):
             fout = edit_filename(fileout, i+1)
             print("-"*10, "Saving file","-"*10, sep="\n")
             session.execute(f"info state > '{fout}'")
+            session.execute("reset")
+            set_define_functions(session, initials["defines"])
+            session.execute(initials["sets"])
     if fileout!="":
         if split:
             fout = edit_filename(fileout, i)

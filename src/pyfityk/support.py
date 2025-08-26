@@ -28,6 +28,21 @@ def substitute_with_dict(text, pattern, replacements):
         return replacements.get(key, key)
     return re.sub(pattern, replacer, text)
 
+def get_session_initials(session) -> dict:
+    """Get Fityk session defines and sets."""
+    return dict(
+        defines = get_define_functions(session),
+        sets = format_set(session.get_info("set")),
+        )
+
+
+def format_set(s: str):
+    """Format string to be executable for setting properties in Fityk.
+    **s** needs to be the outcome of Fityk info set."""
+    s = re.sub(r"<.*> ","", s).replace("\n",";set").replace("Available options:;", "")
+    s = re.sub(r"set cwd = .*?;", "", s) #remove cwd that can cause problems 
+    return s
+
 # -----------------------------------------------------------------
 # Get data and functions from Fityk session
 # -----------------------------------------------------------------

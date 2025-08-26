@@ -90,7 +90,10 @@ def get_functions(session, dataset):
 
 def read_fityk(session):
     """
-    Read Fityk file and convert it to a python-like structure
+    Read Fityk file and convert it to a python-like structure. 
+    Warning: at the present state the function does not read read if a variable
+        is constant not its limits
+
     Input
     ------
     session: str or Fityk session
@@ -111,9 +114,7 @@ def read_fityk(session):
         f.execute(f"reset; exec '{session}'")
     else:
         f = session
-    # title = [f.get_info("title",i) for i in range(f.get_dataset_count())]
-    # funcs = [get_functions(f,i) for i in range(f.get_dataset_count())]
-    # data = [get_data(f,i) for i in range(f.get_dataset_count())]
+
     return [
         {
             "title":f.get_info("title",i),
@@ -124,7 +125,6 @@ def read_fityk(session):
         }
         for i in range(f.get_dataset_count())
     ]
-    # title, data, funcs
 
 def read_fityk_text(filename, errors=True):
     """
