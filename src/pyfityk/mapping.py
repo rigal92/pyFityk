@@ -209,9 +209,10 @@ def fitMap(x, y_spectra, template_file, fileout="", verbosity=-1, split=0, fit=T
             set_define_functions(session, initials["defines"])
             session.execute(initials["sets"])
     if fileout!="":
-        if split and (i+1)!=len(templ_ids):
-            fout = edit_filename(fileout, i+1)
-            session.execute(f"info state > '{fout}'")
+        if split:
+            if (i+1)!=len(templ_ids):
+                fout = edit_filename(fileout, i+1)
+                session.execute(f"info state > '{fout}'")
         else:
             session.execute(f"info state > '{fileout}'")
 
