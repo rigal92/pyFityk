@@ -198,7 +198,7 @@ def fitMap(x, y_spectra, template_file, fileout="", verbosity=-1, split=0, fit=T
         print(f"-----Fitting @{i}")
         match = template[templ_id]
         title = ";".join(coord) + f";K-{templ_id}"
-        if i!=0: session.execute("@+ = 0")
+        if i%split!=0: session.execute("@+ = 0")
         session.load_data(i%split, x, y, [], title)
         fitSpectrum(session, buffer_session, x, y, match, i%split, fit)
         if (fileout!="") and split and ((i+1)%split == 0):
@@ -209,8 +209,8 @@ def fitMap(x, y_spectra, template_file, fileout="", verbosity=-1, split=0, fit=T
             set_define_functions(session, initials["defines"])
             session.execute(initials["sets"])
     if fileout!="":
-        if split:
-            fout = edit_filename(fileout, i)
+        if split and (i+1)!=len(templ_ids):
+            fout = edit_filename(fileout, i+1)
             session.execute(f"info state > '{fout}'")
         else:
             session.execute(f"info state > '{fileout}'")
