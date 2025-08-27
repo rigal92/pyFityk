@@ -104,7 +104,8 @@ def fitSpectrum(session, buffer_session, x, y, template, dataset, fit=True):
     model = template["model"]
     deactivate_points(buffer_session, active, 0)
     deactivate_points(session, active, dataset)
-    buffer_session.execute("F="+model)
+    if model != 0:
+        buffer_session.execute("F="+model)
     if fit:
         try:
             buffer_session.execute(f"@0: fit")
