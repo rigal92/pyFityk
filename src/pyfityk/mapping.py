@@ -197,7 +197,11 @@ def fitMap(x, y_spectra, template_file, fileout="", verbosity=-1, split=0, fit=T
         print(f"-----Fitting @{i}")
         match = template[templ_id]
         title = ";".join(coord) + f";ID-{templ_id}"
-        if i%split!=0: session.execute("@+ = 0")
+        #Fityk creates an empty dataset at position 0. Do not create a new one for dataset 0
+        if split:
+            if i%split!=0: session.execute("@+ = 0")
+        else:
+            if i!=0: session.execute("@+ = 0")
         session.load_data(i%split, x, y, [], title)
         fitSpectrum(session, buffer_session, x, y, match, i%split, fit)
         if (fileout!="") and split and ((i+1)%split == 0):
