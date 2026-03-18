@@ -193,13 +193,22 @@ def fitMap(x, y_spectra, template_file, fileout="", verbosity=-1, split=0, fit=T
         set_define_functions(f, initials["defines"])
         f.execute(initials["sets"])
 
+    if not pd.api.types.is_float_dtype(x):
+        # fityk accepts only float arrays    
+        x = x.astype(float)
+
     for i, (templ_id, (coord, y)) in enumerate(zip(templ_ids, y_spectra.items())):
         print(f"-----Fitting @{i}")
         dataset_idx = i%split if split else i
+
+        if not pd.api.types.is_float_dtype(y):
+        # fityk accepts only float arrays    
+            y = y.astype(float)
         match = template[templ_id]
         title = ";".join(coord) + f";ID-{templ_id}"
         #Fityk creates an empty dataset at position 0. Do not create a new one for dataset 0
         if dataset_idx!=0: session.execute("@+ = 0")
+        print(dataset_idx, x, y, title,"-"*20, sep ="\n")
         session.load_data(dataset_idx, x, y, [], title)
         fitSpectrum(session, buffer_session, x, y, match, dataset_idx, fit)
         if (fileout!="") and split and ((i+1)%split == 0):
