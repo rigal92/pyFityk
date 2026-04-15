@@ -93,7 +93,7 @@ def fitSpectrum(session, buffer_session, x, y, template, dataset, fit=True):
     buffer_session: Fityk
     x,y: array like of floats
     template: dict
-        a template element returned from pyfityk.io.read_fityk
+        a template element returned from pyfityk.io.read_fityk_text
     dataset: int
         index of the dataset
     fit: bool, default=True
@@ -107,9 +107,10 @@ def fitSpectrum(session, buffer_session, x, y, template, dataset, fit=True):
     if model != 0:
         buffer_session.execute("F="+model)
     if fit:
-        try:
+        is_fittable = "~" in model
+        if is_fittable:
             buffer_session.execute(f"@0: fit")
-        except:
+        else:
             print("No fittable parameters.")
     funcs = read_functions(buffer_session, 0)
     session.execute(f"@{dataset}.F=0") #reset functions
