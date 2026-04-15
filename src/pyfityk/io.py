@@ -92,7 +92,7 @@ def read_fityk(session):
     """
     Read Fityk file and convert it to a python-like structure. 
     Warning: at the present state the function does not read read if a variable
-        is constant not its limits
+        is constant nor its limits
 
     Input
     ------
@@ -194,11 +194,11 @@ def read_fityk_text(filename, errors=True):
         d["title"] = f.get_info("title",i)
         if i in models:
             model = models[i]
-            f.execute(f"@{i}:F ={model}")
+            f.execute(f"@{i}:F = {model}")
             if errors:
-                try:
+                if "~" in model:
                     peaks = f.get_info("peaks_err",i)
-                except:
+                else:
                     peaks = f.get_info("peaks",i)
             else:
                     peaks = f.get_info("peaks",i)
@@ -336,17 +336,15 @@ def export_peaks(session, outfolder, errors = False):
     f = session
     for i in range(f.get_dataset_count()):
         funcs=f.get_components(i)
+        is_fittable = any(
+            ["~" in f.get_info(f"prop %{func.name}") for func in f.get_components(i)])
         if len(funcs)==0:
             continue
         title = f.get_info("title",i)
-        command = "peaks_err" if errors else "peaks"
+        command = "peaks_err" if (errors and is_fittable) else "peaks"
         s = f"@{i}: info {command} >'{outfolder}{title}.peaks'"
-        try:
-            f.execute(s)
-        except ExecuteError as e:
-            s = e.__str__()
-            if s == "No parametrized functions are used in the model.":
-                print(f"WARNING! No parametrized functions are used in the model for dataset @{i}. Exporting peaks without errors.")
-                s = f"@{i}: info peaks >'{outfolder}{title}.peaks'"
-                f.execute(s)
+        f.execute(s)
+        if errors and not is_fittable:
+            print(f"WARNING! No parametrized functions are used in the model for dataset @{i}. Exporting peaks without errors.")
+
 
