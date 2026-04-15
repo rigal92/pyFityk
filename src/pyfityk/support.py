@@ -166,7 +166,8 @@ def convert_peaks(peaks):
     peaks = peaks.replace("?","0")
     peaks = pd.DataFrame([re.split(r"\s+",s)for s in peaks.split("\n")[1:]]) #split the lines, then columns
     peaks = peaks.replace("x",None)
-    peaks.loc[:,2:] = peaks.loc[:,2:].astype(float)
+    for i in range(2,len(peaks.columns)):
+        peaks[i] = peaks[i].astype(float) # converts to float all columns apart first two
 
     if(errors):
         pars_cols = [f"a{int(i/2)}" if (not i%2) else f"err_a{int(i/2)}" for i in range(len(peaks.columns)-6)]
