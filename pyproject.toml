@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=69.0", "pandas>=1.5.3"]
+requires = ["setuptools>=69.0", "pandas>=1.5.3", "scikit-learn"]
 build-backend = "setuptools.build_meta"
 
 [project]
