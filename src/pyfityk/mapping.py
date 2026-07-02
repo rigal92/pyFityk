@@ -104,7 +104,7 @@ def fitSpectrum(buffer_session, x, y, template, dataset=0, session=None, fit=Tru
     Returns
     -------
     pd.DataFrame:
-        return the parameters of the functions fitted 
+        return the parameters of the functions fitted if to_array==True 
     """
     active = template["data"]["active"]
     model = template["model"]
@@ -112,12 +112,12 @@ def fitSpectrum(buffer_session, x, y, template, dataset=0, session=None, fit=Tru
     deactivate_points(buffer_session, active, 0)
     if model != 0:
         buffer_session.execute("F="+model)
-    if fit:
-        is_fittable = "~" in model
-        if is_fittable:
-            buffer_session.execute(f"@0: fit")
-        else:
-            print("No fittable parameters.")
+        if fit:
+            is_fittable = "~" in model
+            if is_fittable:
+                buffer_session.execute(f"@0: fit")
+            else:
+                print("No fittable parameters.")
     if not to_array:
         funcs = read_functions(buffer_session, 0)
         deactivate_points(session, active, dataset)
@@ -144,8 +144,9 @@ def fitMap(x, y_spectra, template_file, fileout="", verbosity=-1, split=0, fit=T
         name of a Fityk file used as template for the initial model used
         for fitting the spectra
     fileout: string, default=""
-        if different to "", fileout is used as a file name to save the settions
-        Ignored if to_array=True
+        if different to "", fileout is used as a file name to save the results
+        - a fityk file if to_array == False
+        - a table with the parameters if to_array == True
     verbosity: int, default=-1
         value passed to Fityk to set the verbosity of the Fityk output.
         Possible values: -1 (silent), 0 (normal), 1 (verbose), 2 (very verbose)
@@ -213,9 +214,14 @@ def fitMap(x, y_spectra, template_file, fileout="", verbosity=-1, split=0, fit=T
         # fityk accepts only float arrays    
         x = x.astype(float)
 
+    l = []
+
     for i, (templ_id, (coord, y)) in enumerate(zip(templ_ids, y_spectra.items())):
-        print(f"-----Fitting @{i}")
-        dataset_idx = i%split if split else i
+        if verbosity == -1:
+            if i%500==0:
+                print(f"-----Fitting @{i}")
+        else:
+            print(f"-----Fitting @{i}")
 
         if not pd.api.types.is_float_dtype(y):
         # fityk accepts only float arrays    
@@ -223,21 +229,33 @@ def fitMap(x, y_spectra, template_file, fileout="", verbosity=-1, split=0, fit=T
         match = template[templ_id]
         title = ";".join(coord) + f";ID-{templ_id}"
         #Fityk creates an empty dataset at position 0. Do not create a new one for dataset 0
-        if dataset_idx!=0: session.execute("@+ = 0")
-        session.load_data(dataset_idx, x, y, [], title)
-        fitSpectrum(session, buffer_session, x, y, match, dataset_idx, fit)
-        if (fileout!="") and split and ((i+1)%split == 0):
-            fout = edit_filename(fileout, i+1)
-            print("-"*10, "Saving file","-"*10, sep="\n")
-            session.execute(f"info state > '{fout}'")
-            session.execute("reset")
-            set_define_functions(session, initials["defines"])
-            session.execute(initials["sets"])
-    if fileout!="":
-        if split:
-            if len(templ_ids)%split!=0:
+        if not to_array:
+            dataset_idx = i%split if split else i
+            if dataset_idx!=0: session.execute("@+ = 0")
+            session.load_data(dataset_idx, x, y, [], title)
+            fitSpectrum(buffer_session, x, y, match, session=session, dataset=dataset_idx, fit=fit)
+            if (fileout!="") and split and ((i+1)%split == 0):
                 fout = edit_filename(fileout, i+1)
+                print("-"*10, "Saving file","-"*10, sep="\n")
                 session.execute(f"info state > '{fout}'")
+                session.execute("reset")
+                set_define_functions(session, initials["defines"])
+                session.execute(initials["sets"])
         else:
-            session.execute(f"info state > '{fileout}'")
+            funcs = fitSpectrum(buffer_session, x, y, match, fit=fit, to_array=True)
+            idx = pd.MultiIndex.from_tuples([(coord[0], coord[1], templ_id) for _ in range(len(funcs))], names=("x","y","templateIDX"))
+            funcs = funcs.set_index(idx)
+            l.append(funcs)
+
+
+    if not to_array:
+        if fileout!="":
+            if split:
+                if len(templ_ids)%split!=0:
+                    fout = edit_filename(fileout, i+1)
+                    session.execute(f"info state > '{fout}'")
+            else:
+                session.execute(f"info state > '{fileout}'")
+    else:
+        return pd.concat(l)
 
