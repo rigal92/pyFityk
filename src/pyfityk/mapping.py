@@ -4,7 +4,7 @@ from scipy.stats import pearsonr
 from scipy.signal import savgol_filter
 import pandas as pd
 import numpy as np
-from pyfityk.io import read_fityk_text
+from pyfityk.io import get_functions, read_fityk_text
 from pyfityk.support import *
 
 # -----------------------------------------------------------------
@@ -83,27 +83,33 @@ def edit_filename(filename, obj, replace=False):
 # Fitting
 # -----------------------------------------------------------------
 
-def fitSpectrum(session, buffer_session, x, y, template, dataset, fit=True):
+def fitSpectrum(buffer_session, x, y, template, dataset=0, session=None, fit=True, to_array=False):
     """
     Fit a spectrum using a buffer session and adds is to another session.
     
     Inputs
     ------
-    session: Fityk
     buffer_session: Fityk
     x,y: array like of floats
     template: dict
         a template element returned from pyfityk.io.read_fityk_text
     dataset: int
-        index of the dataset
+        index of the dataset. Ignored if to_array==True
+    session: Fityk or None
+        session on which to save the fit. If to_array this is ignored
     fit: bool, default=True
         flag used to enable/disable the spectra fit once the template is loaded
+    to_array: bool, default=False
+        returns an array with the parameters
+    Returns
+    -------
+    pd.DataFrame:
+        return the parameters of the functions fitted 
     """
-    buffer_session.load_data(0, x, y, []) #dataset n, x, y, sigma
     active = template["data"]["active"]
     model = template["model"]
+    buffer_session.load_data(0, x, y, []) #dataset n, x, y, sigma
     deactivate_points(buffer_session, active, 0)
-    deactivate_points(session, active, dataset)
     if model != 0:
         buffer_session.execute("F="+model)
     if fit:
@@ -112,12 +118,18 @@ def fitSpectrum(session, buffer_session, x, y, template, dataset, fit=True):
             buffer_session.execute(f"@0: fit")
         else:
             print("No fittable parameters.")
-    funcs = read_functions(buffer_session, 0)
-    session.execute(f"@{dataset}.F=0") #reset functions
-    for func in funcs.values():
-        session.execute(f"@{dataset}.F+={func}")
+    if not to_array:
+        funcs = read_functions(buffer_session, 0)
+        deactivate_points(session, active, dataset)
+        session.execute(f"@{dataset}.F=0") #reset functions
+        for func in funcs.values():
+            session.execute(f"@{dataset}.F+={func}")
+    else:
+        funcs = get_functions(buffer_session, 0)
+        return funcs
 
-def fitMap(x, y_spectra, template_file, fileout="", verbosity=-1, split=0, fit=True, match_method="pearsonr", match_preprocess=False):
+
+def fitMap(x, y_spectra, template_file, fileout="", verbosity=-1, split=0, fit=True, match_method="sqeuclidean", match_preprocess=False, to_array=False):
     """
     Fit a batch of spectra. The initial conditions are obtained by matching
     the y_spectra to a template.
@@ -133,6 +145,7 @@ def fitMap(x, y_spectra, template_file, fileout="", verbosity=-1, split=0, fit=T
         for fitting the spectra
     fileout: string, default=""
         if different to "", fileout is used as a file name to save the settions
+        Ignored if to_array=True
     verbosity: int, default=-1
         value passed to Fityk to set the verbosity of the Fityk output.
         Possible values: -1 (silent), 0 (normal), 1 (verbose), 2 (very verbose)
@@ -163,7 +176,9 @@ def fitMap(x, y_spectra, template_file, fileout="", verbosity=-1, split=0, fit=T
         - True: performs costant baseline subtraction, smoothing and normalization
         - str: the 'base', 'smooth' and 'norm' keywords can be used to toggle 
         the corresponging preprocess. For example: 'base norm' will perform
-        baseline correction and normalization before performing the matching  
+        baseline correction and normalization before performing the matching
+    to_array: bool, default=False
+        returns an array of all the parameters
     """
 
     if match_preprocess:
