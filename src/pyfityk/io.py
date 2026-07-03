@@ -63,7 +63,7 @@ def get_functions_DEP(session, dataset):
     return funcs
 
 
-def get_functions(session, dataset):
+def get_functions(session, dataset, tidy=False):
     """
     Read all the fuctions of a dataset in the session
     
@@ -79,13 +79,22 @@ def get_functions(session, dataset):
         dictionary with the function name as a key and
         the parameters as the value
     """
-    std_pars = ["Center", "Height", "Area", "FWHM"]
-    df = pd.DataFrame(read_function_pars(func) for func in session.get_components(dataset))
-    if not df.empty:
-        df.columns = ["fid", "fname"] + std_pars + [f"a{n}" for n in range(len(df.columns)-6)] 
-    else:
+    l = [read_function_pars(func) for func in session.get_components(dataset)]
+    if len(l)==0:
         return None
-    return df
+
+    std_pars = ["Center", "Height", "Area", "FWHM"]
+    if tidy:
+        return pd.Series(
+            [x for ll in l for x in ll[2:]],
+            index = [(ll[1],par) for ll in l for par in std_pars+[f"a{n}" for n in range(len(ll)-6)]]
+            )
+
+    else:
+        df = pd.DataFrame(l)
+        df.columns = ["fid", "fname"] + std_pars + [f"a{n}" for n in range(len(df.columns)-6)] 
+        return df
+
 
 
 def read_fityk(session):

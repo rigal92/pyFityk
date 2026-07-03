@@ -176,6 +176,24 @@ def convert_peaks(peaks):
     peaks.columns = ["fid", "fname", "Center", "Height", "Area", "FWHM"] + pars_cols
     return peaks
 
+def tidy_functions(functions:pd.DataFrame):
+    """
+    Converts functions from a DataFrame where each function for each dataset is 
+    a single line to a DataFrame with a column per function and a single row
+    per dataset. WARNING: the function does not take into account the case where
+    a dataset has a function repeated multiple times  
+    Inputs
+    ------
+    functions: pd.DataFrame
+        the DataFrame to convert
+    Returns
+    ------
+    pd.DataFrame
+        the converted DataFrame
+    """
+
+    return pd.concat({key:d.droplevel(["fname","fid"]) for key,d in functions.groupby("fname")}, axis=1).dropna(how="all", axis=1)
+
 # -----------------------------------------------------------------
 # Split fityk sections when reading as a fityk as text (NOT IN USE) 
 # -----------------------------------------------------------------

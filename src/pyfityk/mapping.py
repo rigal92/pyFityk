@@ -125,7 +125,7 @@ def fitSpectrum(buffer_session, x, y, template, dataset=0, session=None, fit=Tru
         for func in funcs.values():
             session.execute(f"@{dataset}.F+={func}")
     else:
-        funcs = get_functions(buffer_session, 0)
+        funcs = get_functions(buffer_session, 0, tidy=True)
         return funcs
 
 
@@ -214,7 +214,9 @@ def fitMap(x, y_spectra, template_file, fileout="", verbosity=-1, split=0, fit=T
         # fityk accepts only float arrays    
         x = x.astype(float)
 
-    l = []
+    if to_array:
+        # all_funcs = []
+        all_funcs = {}
 
     for i, (templ_id, (coord, y)) in enumerate(zip(templ_ids, y_spectra.items())):
         if verbosity == -1:
@@ -227,14 +229,15 @@ def fitMap(x, y_spectra, template_file, fileout="", verbosity=-1, split=0, fit=T
         # fityk accepts only float arrays    
             y = y.astype(float)
         match = template[templ_id]
-        title = ";".join(coord) + f";ID-{templ_id}"
-        #Fityk creates an empty dataset at position 0. Do not create a new one for dataset 0
         if to_array:
             funcs = fitSpectrum(buffer_session, x, y, match, fit=fit, to_array=True)
-            idx = pd.MultiIndex.from_tuples([(coord[0], coord[1], templ_id) for _ in range(len(funcs))], names=("x","y","templateIDX"))
-            funcs = funcs.set_index(idx)
-            l.append(funcs)
+            idx = (coord[0], coord[1], templ_id)
+            all_funcs[idx] = funcs
+            # funcs.name = idx
+            # all_funcs.append(funcs)
         else:
+            title = ";".join(coord) + f";ID-{templ_id}"
+            #Fityk creates an empty dataset at position 0. Do not create a new one for dataset 0
             dataset_idx = i%split if split else i
             if dataset_idx!=0: session.execute("@+ = 0")
             session.load_data(dataset_idx, x, y, [], title)
@@ -243,7 +246,10 @@ def fitMap(x, y_spectra, template_file, fileout="", verbosity=-1, split=0, fit=T
         if (fileout!="") and split and ((i+1)%split == 0):
             print("-"*10, "Saving file","-"*10, sep="\n")
             if to_array:
-                pd.concat(l).to_csv(fileout)
+                temp = pd.DataFrame(all_funcs).T
+                temp.columns = pd.MultiIndex.from_tuples(temp.columns, names=["function","parameter"])
+                temp.index = temp.index.set_names(["x","y","templateID"])
+                temp.to_csv(fileout) 
             else:
                 fout = edit_filename(fileout, i+1)
                 session.execute(f"info state > '{fout}'")
@@ -252,7 +258,15 @@ def fitMap(x, y_spectra, template_file, fileout="", verbosity=-1, split=0, fit=T
                 session.execute(initials["sets"])
 
 
-    if not to_array:
+    if to_array:
+        all_funcs = pd.DataFrame(all_funcs).T
+        all_funcs.columns = pd.MultiIndex.from_tuples(all_funcs.columns, names=["function","parameter"])
+        all_funcs.index = all_funcs.index.set_names(["x","y","templateID"])
+        if fileout!="":
+            all_funcs.to_csv(fileout)
+        return all_funcs
+
+    else:
         if fileout!="":
             if split:
                 if len(templ_ids)%split!=0:
@@ -260,9 +274,4 @@ def fitMap(x, y_spectra, template_file, fileout="", verbosity=-1, split=0, fit=T
                     session.execute(f"info state > '{fout}'")
             else:
                 session.execute(f"info state > '{fileout}'")
-    else:
-        all_funcs = pd.concat(l)
-        if fileout!="":
-            all_funcs.to_csv(fileout)
-        return all_funcs
 
